@@ -1,0 +1,51 @@
+* {
+    scroll-behavior: smooth;
+    margin: 0px;
+    padding: 0px;
+    font-family: 'Handjet', cursive;
+}
+
+
+ul {
+    list-style: none;
+}
+
+a {
+    text-decoration: none;
+}
+
+.navigation {
+    background-color: rgb(40, 40, 40);
+    padding: 10px 0;
+}
+
+.menu {
+    display: flex;
+    justify-content: center;
+    list-style-type: none;
+    align-items: center;
+    margin: 0 auto;
+    padding: 0;
+}
+
+.menu li {
+    flex-direction: row;
+    margin: 0 35px;
+    padding: 5px 10px;
+    letter-spacing: 0.5px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.menu a {
+    color: rgb(106, 174, 106);
+}
+
+.menu a:hover {
+    background-color: rgb(106, 174, 106, 0.3);
+    border-radius: 5px;
+}
+
+body {
+    background-color: rgb(68, 77, 87);
+}

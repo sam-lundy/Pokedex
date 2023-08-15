@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../static/styles/base.css">
+    {% block additional_styles %} {% endblock %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Handjet&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+    <title>{% block title %} {% endblock %}</title>
+</head>
+<body>
+    <nav class="navigation">
+            <ul class="menu">
+                <li><a href="{{ url_for('home') }}">Pokédex</a></li>
+                <li><a href="{{ url_for('about') }}">About</a></li>
+                <li><a href="{{ url_for('search') }}">Search</a></li>
+            </ul>
+    </nav>
+
+    {% block content %}
+    
+    {% endblock %}
+</body>
+</html>
