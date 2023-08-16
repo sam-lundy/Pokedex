@@ -10,23 +10,30 @@
 
 {% block content %}
 <form method="POST" class="pokemon-form">
-      <label for="pokemon" class="pokemon-label">Pokémon Name:</label>
-      <input type="text" class="pokemon-input" name="pokemon">
-      <button type="submit" class="pokemon-btn">Search</button>
+    {{ form.hidden_tag() }}
+    {{ form.poke_search.label(class='pokemon-label') }}
+    {{ form.poke_search(class='pokemon-input') }}
+    {{ form.poke_submit(class='pokemon-btn') }}
 </form>
 
     {% if pokemon_data %}
-    <div class="pokemon-card">
-        <h2 class="pokemon-name">{{ pokemon_name }}</h2>
-        <img src="{{ pokemon_data.sprite_url }}" alt="{{ pokemon_name }}", class="pokemon-image">
-        <div class="pokemon-details">
-            <p>Main Ability: {{ pokemon_data.main_ability }}</p>
-            <p>Base Experience: {{ pokemon_data.base_experience }}</p>
-            <p>HP Base: {{ pokemon_data.hp_base }}</p>
-            <p>ATK Base: {{ pokemon_data.atk_base }}</p>
-            <p>DEF Base: {{ pokemon_data.def_base }}</p>
+        <div class="pokemon-card">
+            <h2 class="pokemon-name">{{ pokemon_name }}</h2>
+            <img src="{{ pokemon_data.sprite_url }}" alt="{{ pokemon_name }}", class="pokemon-image">
+            <div class="pokemon-details">
+                <p>Main Ability: {{ pokemon_data.main_ability }}</p>
+                <p>Base Experience: {{ pokemon_data.base_experience }}</p>
+                <p>HP Base: {{ pokemon_data.hp_base }}</p>
+                <p>ATK Base: {{ pokemon_data.atk_base }}</p>
+                <p>DEF Base: {{ pokemon_data.def_base }}</p>
+            </div>
         </div>
-    </div>
+    {% endif %}
+
+    {% if error_message %}
+        <div class="error-alert">
+            {{ error_message }}
+        </div>
     {% endif %}
 
 {% endblock %}

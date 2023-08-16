@@ -1,7 +1,8 @@
 from flask import Flask, request, render_template, url_for, redirect
 import requests
 from app import app
-from .forms import LoginForm
+from app.forms import LoginForm
+from app.forms import PokemonSearchForm
 
 BASE_URL = "https://pokeapi.co/api/v2/pokemon/"
 
@@ -36,18 +37,22 @@ def about():
 
 @app.route('/search', methods=['GET', 'POST'])
 def search():
+    form = PokemonSearchForm()
+    error_message = None
     pokemon_data = None
     pokemon_name = None
 
-    if request.method == 'POST':
-        pokemon_name = request.form.get('pokemon')
-        if pokemon_name:
-            pokemon_name = pokemon_name.lower()
-            pokemon_data = get_poke_info(pokemon_name)
+    if form.validate_on_submit():
+        pokemon_name = form.poke_search.data.lower()
+        pokemon_data = get_poke_info(pokemon_name)
 
-            #Finally converting to title in order to display in the browser
+        if "error" in pokemon_data:
+            error_message = pokemon_data["error"]
+            pokemon_data = None
+        else:
+            #Converting to title in order to display in the browser
             pokemon_name = pokemon_name.title()
 
-    return render_template('search.html', pokemon_data=pokemon_data, pokemon_name=pokemon_name)
+    return render_template('search.html', form=form, pokemon_data=pokemon_data, pokemon_name=pokemon_name, error_message=error_message)
 
 
