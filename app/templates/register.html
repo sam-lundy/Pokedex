@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block additional_styles %}
+    <link rel="stylesheet" href="../static/styles/register.css">
+{% endblock %}
+
+{% block title %}
+  Register
+{% endblock %}
+
+{% block content %}
+<div class="register-container">
+    <form method="POST" class="register-form">
+    <h2>Sign Up for Pokédex</h2>
+        {{ form.hidden_tag() }}
+
+        <div class="form-group">
+            {{ form.name(class='form-control', placeholder='Name') }}
+        </div>
+
+        <div class="form-group">
+            {{ form.email(class='form-control', placeholder='Email Address') }}
+        </div>
+
+        <div class="form-group">
+            {{ form.username(class='form-control', placeholder='Username') }}
+        </div>
+
+        <div class="form-group">
+            {{ form.password(class='form-control', placeholder='Password') }}
+        </div>
+
+        <div class="form-group">
+            {{ form.password_conf(class='form-control', placeholder='Confirm Password') }}
+        </div>
+
+        <div class="form-group">
+            {{ form.submit(class='form-btn') }}
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block additional_styles %}
+    <link rel="stylesheet" href="../static/styles/login.css">
+{% endblock %}
+
+{% block title %}
+  Sign In
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <form method="POST" class="login-form">
+    <h2>Sign-In to Pokédex</h2>
+
+        {{ form.hidden_tag() }}
+
+        <div class="form-group">
+            {{ form.user_or_email(class='form-control', placeholder='Email or Username') }}
+        </div>
+
+        <div class="form-group">
+            {{ form.password(class='form-control', placeholder='Password') }}
+        </div>
+
+        <div class="form-group">
+            {{ form.submit(class='form-btn') }}
+        </div>
+    </form>
+</div>
+
+<div class="login-register">
+    <h3>Not yet a member?</h3>
+    <a href="{{ url_for('register') }}">Register Now</a>
+</div>
+
+{% endblock %}

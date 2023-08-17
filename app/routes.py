@@ -1,13 +1,13 @@
 from flask import Flask, request, render_template, url_for, redirect
 import requests
 from app import app
-from app.forms import LoginForm
-from app.forms import PokemonSearchForm
+from app.forms import LoginForm, RegisterForm, PokemonSearchForm
 
-BASE_URL = "https://pokeapi.co/api/v2/pokemon/"
+
+BASE_API_URL = "https://pokeapi.co/api/v2/pokemon/"
 
 def get_poke_info(poke_name):
-    response = requests.get(BASE_URL + poke_name.lower())
+    response = requests.get(BASE_API_URL + poke_name.lower())
     if response.ok:
         data = response.json()
         return {
@@ -23,17 +23,67 @@ def get_poke_info(poke_name):
             "error": f"Error getting info for {poke_name}. Status code: {response.status_code}"
         }
     
+
+REGISTERED_USERS = {
+
+}
+
+
 @app.route('/')
 def home():
     return render_template('home.html')
+
 
 @app.route('/home')
 def home_redirect():
     return redirect(url_for('home'))
 
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if request.method == 'POST' and form.validate_on_submit():
+        login_input = form.user_or_email.data.strip().lower()
+        password = form.password.data
+
+        user = None
+
+        if "@" in login_input:
+            user_key = "email"
+        else:
+            user_key = "username"
+
+        matching_users = [user for user, data in REGISTERED_USERS.items() if data[user_key] == login_input and data['password'] == password]
+
+        if matching_users:
+            return f"Hello, {REGISTERED_USERS[matching_users[0]]['name']}"
+        else:
+            return "Invalid email/username or password."
+        
+    return render_template('login.html', form=form)
+    
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    form = RegisterForm()
+    if request.method == 'POST' and form.validate_on_submit():
+        name = f'{form.name.data}'
+        email = form.email.data
+        username = form.username.data
+        password = form.password.data
+        REGISTERED_USERS[email] = {
+            'name': name,
+            'username': username,
+            'password': password
+        }
+        return redirect(url_for('login'))
+    
+    return render_template('register.html', form=form)
+
 @app.route('/about')
 def about():
     return render_template('about.html')
+
 
 @app.route('/search', methods=['GET', 'POST'])
 def search():
