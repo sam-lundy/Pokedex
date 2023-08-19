@@ -15,6 +15,7 @@ def get_poke_info(poke_name):
     if response.ok:
         data = response.json()
         return {
+            "name": data['name'],
             "main_ability": data['abilities'][0]['ability']['name'],
             "base_experience": data['base_experience'],
             "sprite_url": data['sprites']['front_default'],
@@ -135,7 +136,7 @@ def search():
     pokemon_data = None
     pokemon_name = None
 
-    if form.validate_on_submit():
+    if "poke_submit" in request.form and form.validate_on_submit():
         pokemon_name = form.poke_search.data.lower()
         pokemon_data = get_poke_info(pokemon_name)
 
@@ -144,23 +145,40 @@ def search():
             pokemon_data = None
         else:
             pokemon_name = pokemon_name.title()
+            session['pokemon_data'] = pokemon_data
 
-    if add_form.validate_on_submit():
-        team_count = Team.query.filter_by(user_id=current_user.user_id).count()
-        if team_count < 6:
-            new_member = Team(current_user.user_id, pokemon_name, pokemon_data['sprite_url'],
-                            pokemon_data['main_ability'], pokemon_data['base_experience'],
-                            pokemon_data['hp_base'], pokemon_data['atk_base'], pokemon_data['def_base'])
-            db.session.add(new_member)
-            db.session.commit()
-            flash(f"{pokemon_name} added to your team!", "success")
+    elif "add_to_team" in request.form and add_form.validate_on_submit():
+        pokemon_data = session.get('pokemon_data', {})
+        pokemon_name = pokemon_data.get('name', '').title() if pokemon_data else None
+
+        if not pokemon_data or "error" in pokemon_data:
+            flash("Error retrieving Pokémon data. Please search again before adding to your team.", "danger")
         else:
-            flash("You already have 6 Pokémon in your team!", "success")
-    else:
-        return render_template('search.html', form=form, add_form=add_form,
-                               pokemon_data=pokemon_data, pokemon_name=pokemon_name, error_message=error_message)
+            team_count = Team.query.filter_by(user_id=current_user.user_id).count()
+            if team_count < 6:
+                try:
+                    new_member = Team(current_user.user_id, pokemon_name, pokemon_data['sprite_url'],
+                                      pokemon_data['main_ability'], pokemon_data['base_experience'],
+                                      pokemon_data['hp_base'], pokemon_data['atk_base'], pokemon_data['def_base'])
+                    db.session.add(new_member)
+                    db.session.commit()
+                    flash(f"{pokemon_name} added to your team!", "success")
+                except Exception as e:
+                    # This will capture any database error and display it as feedback
+                    flash(f"Error adding Pokémon to your team: {str(e)}", "danger")
+            else:
+                flash("You already have 6 Pokémon in your team!", "warning")
 
+    return render_template('search.html', form=form, add_form=add_form,
+                           pokemon_data=pokemon_data, pokemon_name=pokemon_name, error_message=error_message)
 
-    return render_template('search.html', form=form, pokemon_data=pokemon_data, pokemon_name=pokemon_name, error_message=error_message)
-
-
+@app.route('/remove_from_team/<int:pokemon_id>', methods=['POST'])
+@login_required
+def remove_from_team(pokemon_id):
+    pokemon_to_remove = Team.query.get_or_404(pokemon_id)
+    if pokemon_to_remove.user_id != current_user.user_id:
+        abort(403)  # Forbidden access
+    db.session.delete(pokemon_to_remove)
+    db.session.commit()
+    flash(f"{pokemon_to_remove.poke_name} has been removed from your team!", "success")
+    return redirect(url_for('myteam'))

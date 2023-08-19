@@ -1,0 +1,61 @@
+h2 {
+    text-align: center;
+    color: rgb(198, 224, 198);
+    padding-bottom: 50px;
+    padding-top: 25px;
+}
+
+.team-container {
+    width: 100%;
+    margin: 0 auto;
+    padding: 2em 0;
+}
+
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.pokemon-card {
+    border: 1px solid #ddd;
+    padding: 1em;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background-color: #f9f9f9;
+    transition: transform 0.3s;
+}
+
+.pokemon-card:hover {
+    transform: translateY(-10px);
+}
+
+.pokemon-image {
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    margin-bottom: 1em;
+}
+
+.pokemon-details {
+    text-align: center;
+}
+
+.remove-btn {
+    background-color: #e74c3c;
+    color: #fff;
+    padding: 0.5em 1em;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 1em;
+}
+
+.remove-btn:hover {
+    background-color: #c0392b;
+}
+
+.pokemon-name {
+    text-align: center;
+}

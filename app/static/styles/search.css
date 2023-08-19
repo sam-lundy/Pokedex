@@ -55,6 +55,7 @@ h1 {
     box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3);
     background-color: #f3f3f3;
     position: relative;
+    text-align: center;
 }
 
 .pokemon-name {
@@ -84,6 +85,12 @@ h1 {
     font-weight: bold;
     font-size: 2rem;
     margin-top: 20px;
+    text-align: center;
+}
+
+.team-btn {
+    background-color: green;
+    color: rgb(198, 224, 198);
     text-align: center;
 }
 

@@ -28,6 +28,11 @@
             <p>HP Base: {{ pokemon_data.hp_base }}</p>
             <p>ATK Base: {{ pokemon_data.atk_base }}</p>
             <p>DEF Base: {{ pokemon_data.def_base }}</p>
+
+            <form method="POST">
+                {{ add_form.hidden_tag() }}
+                {{ add_form.add_to_team(class='team-btn') }}
+            </form>
         </div>
     </div>
 {% endif %}
