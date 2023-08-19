@@ -28,3 +28,7 @@ class RegisterForm(FlaskForm):
     password = PasswordField('Password: ', validators=[DataRequired()])
     password_conf = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
     submit = SubmitField('Register')
+
+class AddToTeamForm(FlaskForm):
+    add_to_team = SubmitField('Add to My Team')
+

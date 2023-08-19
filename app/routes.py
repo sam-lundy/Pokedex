@@ -2,8 +2,8 @@ from flask import Flask, request, render_template, url_for, redirect, flash, ses
 from flask_login import login_user, logout_user, current_user, login_required
 import requests
 from app import app
-from app.forms import LoginForm, RegisterForm, PokemonSearchForm
-from .models import User, db
+from app.forms import LoginForm, RegisterForm, PokemonSearchForm, AddToTeamForm
+from .models import User, Team, db
 from werkzeug.security import check_password_hash
 from sqlalchemy import or_
 
@@ -122,12 +122,15 @@ def about():
 @app.route('/myteam')
 @login_required
 def myteam():
-    return render_template('myteam.html')
+    team = Team.query.filter_by(user_id=current_user.user_id).all()
+    return render_template('myteam.html', team=team)
 
 
 @app.route('/search', methods=['GET', 'POST'])
 def search():
     form = PokemonSearchForm()
+    add_form = AddToTeamForm()
+
     error_message = None
     pokemon_data = None
     pokemon_name = None
@@ -141,6 +144,22 @@ def search():
             pokemon_data = None
         else:
             pokemon_name = pokemon_name.title()
+
+    if add_form.validate_on_submit():
+        team_count = Team.query.filter_by(user_id=current_user.user_id).count()
+        if team_count < 6:
+            new_member = Team(current_user.user_id, pokemon_name, pokemon_data['sprite_url'],
+                            pokemon_data['main_ability'], pokemon_data['base_experience'],
+                            pokemon_data['hp_base'], pokemon_data['atk_base'], pokemon_data['def_base'])
+            db.session.add(new_member)
+            db.session.commit()
+            flash(f"{pokemon_name} added to your team!", "success")
+        else:
+            flash("You already have 6 Pokémon in your team!", "success")
+    else:
+        return render_template('search.html', form=form, add_form=add_form,
+                               pokemon_data=pokemon_data, pokemon_name=pokemon_name, error_message=error_message)
+
 
     return render_template('search.html', form=form, pokemon_data=pokemon_data, pokemon_name=pokemon_name, error_message=error_message)
 
