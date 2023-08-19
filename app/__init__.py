@@ -7,6 +7,7 @@ from .models import db, User
 app = Flask(__name__)
 
 app.config.from_object(Config)
+app.config['SECRET_KEY']
 
 login_manager =  LoginManager()
 

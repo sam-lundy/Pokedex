@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, url_for, redirect, flash
+from flask import Flask, request, render_template, url_for, redirect, flash, session
 from flask_login import login_user, logout_user, current_user, login_required
 import requests
 from app import app
@@ -26,7 +26,19 @@ def get_poke_info(poke_name):
         return {
             "error": f"Error getting info for {poke_name}. Status code: {response.status_code}"
         }
-    
+
+
+#DEBUGGING SESSION
+
+# @app.route('/set-session')
+# def set_session():
+#     session['test_key'] = 'test_value'
+#     return "Session value set"
+
+# @app.route('/get-session')
+# def get_session():
+#     return session.get('test_key', 'No value in session')
+
 
 @app.route('/')
 def home():
@@ -68,42 +80,38 @@ def logout():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegisterForm()
-    if request.method == 'POST' and form.validate_on_submit():
-        print("Form validated and POST request received.")
+    if request.method == 'POST':
         name = form.name.data
         email = form.email.data.lower()
         username = form.username.data.lower()
         password = form.password.data
 
-        existing_email = User.query.filter_by(email=form.email.data).first()
-        existing_user = User.query.filter_by(username=form.username.data).first()
-        # print(existing_email)
-        # print(existing_user)
+        existing_user_or_email = User.query.filter(
+            or_(User.email == email, User.username == username)).first()
 
-        if existing_user:
-            flash("User already exists.", "danger")
-            return redirect(url_for('register'))
-        elif existing_email:
-            flash("User already exists.", "danger")
-            return redirect(url_for('register'))
-        else:
+        if existing_user_or_email:
+            flash("User already exists!", "danger")
+            return render_template('register.html', form=form)
+
+        if form.validate_on_submit():
             new_user = User(name, email, username, password)
 
-        try:
-            db.session.add(new_user)
-            db.session.commit()
+            try:
+                db.session.add(new_user)
+                db.session.commit()
 
-        except Exception as e:
-            db.session.rollback()
-            print(f"Error: {e}")
-            flash("There was an error registering your account. Please try again.", "danger")
-            return redirect(url_for('register'))
+            except Exception as e:
+                db.session.rollback()
+                print(f"Error: {e}")
+                flash("There was an error registering your account. Please try again.", "danger")
+                return redirect(url_for('register'))
             
-        else:
-            flash(f"Welcome {new_user.username}!", "success")
-            return redirect(url_for('login'))
-    else:
-        return render_template('register.html', form=form)
+            else:
+                flash(f"Thank you for registering, {new_user.username}!", "success")
+                return redirect(url_for('login'))
+
+    return render_template('register.html', form=form)
+
 
 
 @app.route('/about')

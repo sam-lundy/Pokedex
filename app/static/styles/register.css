@@ -76,3 +76,7 @@ h2 {
 .register-login a:hover {
     color: #333;
 }
+
+.alert {
+    position: absolute;
+}
