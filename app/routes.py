@@ -3,7 +3,7 @@ from flask_login import login_user, logout_user, current_user, login_required
 import requests
 from app import app
 from app.forms import LoginForm, RegisterForm, PokemonSearchForm, AddToTeamForm
-from .models import User, Team, db
+from .models import User, Team, Pokemon, db
 from werkzeug.security import check_password_hash
 from sqlalchemy import or_
 
@@ -27,6 +27,54 @@ def get_poke_info(poke_name):
         return {
             "error": f"Error getting info for {poke_name}. Status code: {response.status_code}"
         }
+
+#SEED
+
+def poke_db_seed():
+    response = requests.get(BASE_API_URL)
+    total_pokemon = response.json()["count"]
+
+    LIMIT = total_pokemon
+
+    for i in range(1, LIMIT + 1):
+        response = requests.get(BASE_API_URL + str(i), timeout=10)
+        if response.ok:
+            data = response.json()
+            existing_pokemon = Pokemon.query.filter_by(name=data['name']).first()
+            if not existing_pokemon:
+                pokemon = Pokemon(
+                    main_ability=data['abilities'][0]['ability']['name'],
+                    base_exp=data['base_experience'],
+                    sprite_url=data['sprites']['front_default'],
+                    hp_base=data['stats'][0]['base_stat'],
+                    atk_base=data['stats'][1]['base_stat'],
+                    def_base=data['stats'][2]['base_stat']
+                )
+                db.session.add(pokemon)
+                print(f"Added {data['name']} to the database.")
+            else:
+                print(f"Error fetching data for Pokemon ID {i}. Status code: {response.status_code}")\
+            
+
+from random import shuffle
+
+def generate_npc_team(user_team):
+    user_team_exp = sum([pokemon.base_exp for pokemon in user_team])
+    all_pokemon = Pokemon.query.all()
+    shuffle(all_pokemon)
+
+    npc_team = []
+    npc_exp = 0
+
+    for pokemon in all_pokemon:
+        if len(npc_team) == 6:
+            break
+
+        if npc_exp + pokemon.base_exp <= user_team_exp:
+            npc_team.append(pokemon)
+            npc_exp += pokemon.base_exp
+
+    return npc_team
 
 
 #DEBUGGING SESSION
@@ -63,12 +111,15 @@ def login():
         if queried_user and check_password_hash(queried_user.password, password):
             login_user(queried_user)
             flash(f"{queried_user.username} logged in.", "success")
+            if not Pokemon.query.first():
+                poke_db_seed()
             return redirect(url_for('home'))
         else:
             flash("Invalid email/username or password.", "danger")
             return redirect(url_for('login'))
         
     return render_template('login.html', form=form)
+    
     
 
 @app.route('/logout')
@@ -129,6 +180,7 @@ def myteam():
 
 @app.route('/search', methods=['GET', 'POST'])
 def search():
+
     form = PokemonSearchForm()
     add_form = AddToTeamForm()
 
@@ -182,3 +234,20 @@ def remove_from_team(pokemon_id):
     db.session.commit()
     flash(f"{pokemon_to_remove.poke_name} has been removed from your team!", "success")
     return redirect(url_for('myteam'))
+
+
+@app.route('/trainer-team', methods=['GET'])
+@login_required
+def trainer_team():
+    user_team = Team.query.filter_by(user_id=current_user.user_id).all()
+    npc_team = generate_npc_team(user_team)
+
+    for pokemon in npc_team:
+        npc_member = NPC(user_id=current_user.id, pokemon_name=pokemon.name,
+                         sprite_url=pokemon.sprite_url, main_ability=pokemon.main_ability,
+                         base_exp=pokemon.base_exp)
+        db.session.add(npc_member)
+
+    db.session.commit()
+
+    return redirect(url_for('battle'))
