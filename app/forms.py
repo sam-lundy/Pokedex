@@ -31,4 +31,3 @@ class RegisterForm(FlaskForm):
 
 class AddToTeamForm(FlaskForm):
     add_to_team = SubmitField('Add to My Team')
-

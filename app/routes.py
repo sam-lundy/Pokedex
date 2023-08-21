@@ -1,81 +1,11 @@
-from flask import Flask, request, render_template, url_for, redirect, flash, session
+from flask import Flask, request, render_template, url_for, redirect, flash, abort, session
 from flask_login import login_user, logout_user, current_user, login_required
-import requests
 from app import app
 from app.forms import LoginForm, RegisterForm, PokemonSearchForm, AddToTeamForm
-from .models import User, Team, Pokemon, db
+from .models import User, Team, db
 from werkzeug.security import check_password_hash
 from sqlalchemy import or_
-
-
-BASE_API_URL = "https://pokeapi.co/api/v2/pokemon/"
-
-def get_poke_info(poke_name):
-    response = requests.get(BASE_API_URL + poke_name.lower(), timeout=10)
-    if response.ok:
-        data = response.json()
-        return {
-            "name": data['name'],
-            "main_ability": data['abilities'][0]['ability']['name'],
-            "base_experience": data['base_experience'],
-            "sprite_url": data['sprites']['front_default'],
-            "hp_base": data['stats'][0]['base_stat'],
-            "atk_base": data['stats'][1]['base_stat'],
-            "def_base": data['stats'][2]['base_stat']
-        }
-    else:
-        return {
-            "error": f"Error getting info for {poke_name}. Status code: {response.status_code}"
-        }
-
-#SEED
-
-def poke_db_seed():
-    response = requests.get(BASE_API_URL)
-    total_pokemon = response.json()["count"]
-
-    LIMIT = total_pokemon
-
-    for i in range(1, LIMIT + 1):
-        response = requests.get(BASE_API_URL + str(i), timeout=10)
-        if response.ok:
-            data = response.json()
-            existing_pokemon = Pokemon.query.filter_by(name=data['name']).first()
-            if not existing_pokemon:
-                pokemon = Pokemon(
-                    main_ability=data['abilities'][0]['ability']['name'],
-                    base_exp=data['base_experience'],
-                    sprite_url=data['sprites']['front_default'],
-                    hp_base=data['stats'][0]['base_stat'],
-                    atk_base=data['stats'][1]['base_stat'],
-                    def_base=data['stats'][2]['base_stat']
-                )
-                db.session.add(pokemon)
-                print(f"Added {data['name']} to the database.")
-            else:
-                print(f"Error fetching data for Pokemon ID {i}. Status code: {response.status_code}")\
-            
-
-from random import shuffle
-
-def generate_npc_team(user_team):
-    user_team_exp = sum([pokemon.base_exp for pokemon in user_team])
-    all_pokemon = Pokemon.query.all()
-    shuffle(all_pokemon)
-
-    npc_team = []
-    npc_exp = 0
-
-    for pokemon in all_pokemon:
-        if len(npc_team) == 6:
-            break
-
-        if npc_exp + pokemon.base_exp <= user_team_exp:
-            npc_team.append(pokemon)
-            npc_exp += pokemon.base_exp
-
-    return npc_team
-
+from .utils import get_poke_info
 
 #DEBUGGING SESSION
 
@@ -93,7 +23,7 @@ def generate_npc_team(user_team):
 def home():
     return render_template('home.html')
 
-
+#If user navigates to /home, will redirect to root
 @app.route('/home')
 def home_redirect():
     return redirect(url_for('home'))
@@ -106,21 +36,23 @@ def login():
         login_input = form.user_or_email.data.strip().lower()
         password = form.password.data
 
+        #using the or_ feature of sqlalchemy, can query based on email or username
         queried_user = User.query.filter(or_(User.email == login_input, User.username == login_input)).first()
 
         if queried_user and check_password_hash(queried_user.password, password):
             login_user(queried_user)
             flash(f"{queried_user.username} logged in.", "success")
-            if not Pokemon.query.first():
-                poke_db_seed()
-            return redirect(url_for('home'))
+
+            #redirects to the page user was on before login, if exists
+            next_page = request.args.get('next', url_for('home'))
+            return redirect(next_page)
+        
         else:
             flash("Invalid email/username or password.", "danger")
             return redirect(url_for('login'))
         
     return render_template('login.html', form=form)
-    
-    
+
 
 @app.route('/logout')
 @login_required
@@ -134,10 +66,11 @@ def register():
     form = RegisterForm()
     if request.method == 'POST':
         name = form.name.data
-        email = form.email.data.lower()
-        username = form.username.data.lower()
+        email = form.email.data.strip().lower()
+        username = form.username.data.strip().lower()
         password = form.password.data
 
+        #first() stops matching at first result
         existing_user_or_email = User.query.filter(
             or_(User.email == email, User.username == username)).first()
 
@@ -152,6 +85,7 @@ def register():
                 db.session.add(new_user)
                 db.session.commit()
 
+            #Error handling
             except Exception as e:
                 db.session.rollback()
                 print(f"Error: {e}")
@@ -163,7 +97,6 @@ def register():
                 return redirect(url_for('login'))
 
     return render_template('register.html', form=form)
-
 
 
 @app.route('/about')
@@ -200,7 +133,16 @@ def search():
             session['pokemon_data'] = pokemon_data
 
     elif "add_to_team" in request.form and add_form.validate_on_submit():
+        #Check if user logged in
+        if not current_user.is_authenticated:
+            flash("You need to be signed in to add Pokémon to your team!", "danger")
+            #Saves search result to redirect after logging in
+            return redirect(url_for('login', next=request.url))
+        
+        #If data not found, defaults to empty dict
         pokemon_data = session.get('pokemon_data', {})
+        #If data found, retireves value for name otherwise empty string if name not present
+        #If data not found, sets to None
         pokemon_name = pokemon_data.get('name', '').title() if pokemon_data else None
 
         if not pokemon_data or "error" in pokemon_data:
@@ -212,11 +154,14 @@ def search():
                     new_member = Team(current_user.user_id, pokemon_name, pokemon_data['sprite_url'],
                                       pokemon_data['main_ability'], pokemon_data['base_experience'],
                                       pokemon_data['hp_base'], pokemon_data['atk_base'], pokemon_data['def_base'])
+                    
                     db.session.add(new_member)
                     db.session.commit()
+
                     flash(f"{pokemon_name} added to your team!", "success")
+
+                #Captures database errors and display it as feedback
                 except Exception as e:
-                    # This will capture any database error and display it as feedback
                     flash(f"Error adding Pokémon to your team: {str(e)}", "danger")
             else:
                 flash("You already have 6 Pokémon in your team!", "warning")
@@ -224,30 +169,15 @@ def search():
     return render_template('search.html', form=form, add_form=add_form,
                            pokemon_data=pokemon_data, pokemon_name=pokemon_name, error_message=error_message)
 
+
+#Dynamically pass the integer of the poke id to the route
 @app.route('/remove_from_team/<int:pokemon_id>', methods=['POST'])
 @login_required
 def remove_from_team(pokemon_id):
-    pokemon_to_remove = Team.query.get_or_404(pokemon_id)
+    pokemon_to_remove = Team.query.get_or_404(pokemon_id) #Will return 404 if id doesn't exist
     if pokemon_to_remove.user_id != current_user.user_id:
-        abort(403)  # Forbidden access
+        abort(403)  # Users can only remove their own pokes
     db.session.delete(pokemon_to_remove)
     db.session.commit()
     flash(f"{pokemon_to_remove.poke_name} has been removed from your team!", "success")
     return redirect(url_for('myteam'))
-
-
-@app.route('/trainer-team', methods=['GET'])
-@login_required
-def trainer_team():
-    user_team = Team.query.filter_by(user_id=current_user.user_id).all()
-    npc_team = generate_npc_team(user_team)
-
-    for pokemon in npc_team:
-        npc_member = NPC(user_id=current_user.id, pokemon_name=pokemon.name,
-                         sprite_url=pokemon.sprite_url, main_ability=pokemon.main_ability,
-                         base_exp=pokemon.base_exp)
-        db.session.add(npc_member)
-
-    db.session.commit()
-
-    return redirect(url_for('battle'))

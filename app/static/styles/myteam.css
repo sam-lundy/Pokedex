@@ -9,12 +9,15 @@ h2 {
     width: 100%;
     margin: 0 auto;
     padding: 2em 0;
+    justify-content: center;
 }
 
 .cards-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 1.5rem;
+    max-width: 90%;
+    margin: 0 auto;
 }
 
 .pokemon-card {
