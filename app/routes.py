@@ -2,10 +2,11 @@ from flask import Flask, request, render_template, url_for, redirect, flash, abo
 from flask_login import login_user, logout_user, current_user, login_required
 from app import app
 from app.forms import LoginForm, RegisterForm, PokemonSearchForm, AddToTeamForm
-from .models import User, Team, db
+from .models import User, Team, Pokemon, db
 from werkzeug.security import check_password_hash
 from sqlalchemy import or_
 from .utils import get_poke_info
+from random import sample
 
 #DEBUGGING SESSION
 
@@ -17,6 +18,35 @@ from .utils import get_poke_info
 # @app.route('/get-session')
 # def get_session():
 #     return session.get('test_key', 'No value in session')
+
+def add_pokemon_to_team(pokemon_name):
+    if not current_user.is_authenticated:
+        flash("You need to be signed in to add Pokémon to your team!", "danger")
+        return redirect(url_for('login', next=request.url))
+    
+    pokemon_data = get_poke_info(pokemon_name.lower())
+    if "error" in pokemon_data:
+        flash("Error retrieving Pokémon data. Please search again before adding to your team.", "danger")
+        return None
+    
+    team_count = Team.query.filter_by(user_id=current_user.user_id).count()
+    if team_count < 6:
+        try:
+            new_member = Team(current_user.user_id, pokemon_name.title(), pokemon_data['sprite_url'],
+                              pokemon_data['main_ability'], pokemon_data['base_experience'],
+                              pokemon_data['hp_base'], pokemon_data['atk_base'], pokemon_data['def_base'])
+            
+            print(pokemon_name)
+            db.session.add(new_member)
+            db.session.commit()
+            flash(f"{pokemon_name.title()} added to your team!", "success")
+            return True
+        except Exception as e:
+            flash(f"Error adding Pokémon to your team: {str(e)}", "danger")
+            return None
+    else:
+        flash("You already have 6 Pokémon in your team!", "warning")
+        return None
 
 
 @app.route('/')
@@ -104,6 +134,26 @@ def about():
     return render_template('about.html')
 
 
+@app.route('/showcase', methods=['GET', 'POST'])
+def showcase():
+    all_pokes = Pokemon.query.all()
+    random_pokes = sample(all_pokes, 10)
+    add_form = AddToTeamForm()
+
+    error_message = None
+    pokemon_data = None
+    
+    if add_form.validate_on_submit():
+        pokemon_name = add_form.pokemon_name.data
+        if pokemon_name:
+            add_pokemon_to_team(pokemon_name)
+            
+        else:
+            flash("Error: Pokémon name missing.", "danger")
+
+    return render_template('showcase.html', poke_list=random_pokes, pokemon_data=pokemon_data, add_form=add_form, error_message=error_message)
+
+
 @app.route('/myteam')
 @login_required
 def myteam():
@@ -113,60 +163,27 @@ def myteam():
 
 @app.route('/search', methods=['GET', 'POST'])
 def search():
-
-    form = PokemonSearchForm()
+    search_form = PokemonSearchForm()
     add_form = AddToTeamForm()
-
+    
     error_message = None
     pokemon_data = None
     pokemon_name = None
 
-    if "poke_submit" in request.form and form.validate_on_submit():
-        pokemon_name = form.poke_search.data.lower()
+    if search_form.validate_on_submit():
+        pokemon_name = search_form.poke_search.data.lower()
         pokemon_data = get_poke_info(pokemon_name)
-
         if "error" in pokemon_data:
             error_message = pokemon_data["error"]
             pokemon_data = None
         else:
             pokemon_name = pokemon_name.title()
             session['pokemon_data'] = pokemon_data
+    elif add_form.validate_on_submit():
+        pokemon_name = session.get('pokemon_data', {}).get('name', '')
+        add_pokemon_to_team(pokemon_name)
 
-    elif "add_to_team" in request.form and add_form.validate_on_submit():
-        #Check if user logged in
-        if not current_user.is_authenticated:
-            flash("You need to be signed in to add Pokémon to your team!", "danger")
-            #Saves search result to redirect after logging in
-            return redirect(url_for('login', next=request.url))
-        
-        #If data not found, defaults to empty dict
-        pokemon_data = session.get('pokemon_data', {})
-        #If data found, retireves value for name otherwise empty string if name not present
-        #If data not found, sets to None
-        pokemon_name = pokemon_data.get('name', '').title() if pokemon_data else None
-
-        if not pokemon_data or "error" in pokemon_data:
-            flash("Error retrieving Pokémon data. Please search again before adding to your team.", "danger")
-        else:
-            team_count = Team.query.filter_by(user_id=current_user.user_id).count()
-            if team_count < 6:
-                try:
-                    new_member = Team(current_user.user_id, pokemon_name, pokemon_data['sprite_url'],
-                                      pokemon_data['main_ability'], pokemon_data['base_experience'],
-                                      pokemon_data['hp_base'], pokemon_data['atk_base'], pokemon_data['def_base'])
-                    
-                    db.session.add(new_member)
-                    db.session.commit()
-
-                    flash(f"{pokemon_name} added to your team!", "success")
-
-                #Captures database errors and display it as feedback
-                except Exception as e:
-                    flash(f"Error adding Pokémon to your team: {str(e)}", "danger")
-            else:
-                flash("You already have 6 Pokémon in your team!", "warning")
-
-    return render_template('search.html', form=form, add_form=add_form,
+    return render_template('search.html', form=search_form, add_form=add_form,
                            pokemon_data=pokemon_data, pokemon_name=pokemon_name, error_message=error_message)
 
 

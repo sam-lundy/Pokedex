@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, EmailField, PasswordField, SubmitField, ValidationError
+from wtforms import StringField, EmailField, PasswordField, SubmitField, ValidationError, HiddenField
 from wtforms.validators import DataRequired, EqualTo
 from .models import User
 
@@ -31,3 +31,5 @@ class RegisterForm(FlaskForm):
 
 class AddToTeamForm(FlaskForm):
     add_to_team = SubmitField('Add to My Team')
+    pokemon_name = StringField(render_kw={"type": "hidden"})
+

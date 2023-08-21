@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block additional_styles %}
+    <link rel="stylesheet" href="../static/styles/showcase.css">
+{% endblock %}
+
+{% block title %}
+    Random Pokémon
+{% endblock %}
+
+{% block content %}
+{% include './includes/nav.html'%}
+
+    <div class="showcase-container">
+        <h2>Random Pokémon Selection</h2>
+        <div class="showcase-poke-flex">
+        {% for pokemon in poke_list %}
+            <div class="pokemon-card">
+                <h3 class="pokemon-name">{{ pokemon.name }}</h3>
+                <img src="{{ pokemon.sprite_url }}" alt="{{ pokemon.name }}", class="pokemon-image">
+                <div class="pokemon-details">
+                    <p>Main Ability: {{ pokemon.main_ability }}</p>
+                    <p>Base Experience: {{ pokemon.base_experience }}</p>
+                    <p>HP Base: {{ pokemon.hp_base }}</p>
+                    <p>ATK Base: {{ pokemon.atk_base }}</p>
+                    <p>DEF Base: {{ pokemon.def_base }}</p>
+
+                    <div class="btn-wrapper">
+                        <form method="POST" action={{ url_for('showcase') }}>
+                            {{ add_form.hidden_tag() }}
+                            {{ add_form.pokemon_name(value=pokemon.name, type="hidden") }}
+                            {{ add_form.add_to_team(class='team-btn', value="Add to My Team") }}
+
+                        </form>
+                    </div>
+  
+                    <a href="https://www.serebii.net/pokedex-swsh/{{ pokemon.name.lower() }}/" target="_blank">
+                        <button class="serebii-btn">View Details on Serebii.net</button>
+                    </a>
+                </div> 
+            </div>
+        {% endfor %}
+        </div>
+    </div>
+    
+{% endblock %}
