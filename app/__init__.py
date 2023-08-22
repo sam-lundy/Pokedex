@@ -4,34 +4,48 @@ from config import Config
 from flask_migrate import Migrate
 from .models import db, User
 from flask.cli import with_appcontext
+from .utils import poke_db_seed
 import click
 
-app = Flask(__name__)
-app.config.from_object(Config)
-app.config['SECRET_KEY']
+def create_app():
 
-login_manager =  LoginManager()
+    app = Flask(__name__)
+    app.config.from_object(Config)
+    app.config['SECRET_KEY']
 
-db.init_app(app)
+    login_manager =  LoginManager()
 
-migrate = Migrate(app, db)
+    db.init_app(app)
 
-login_manager.init_app(app)
+    migrate = Migrate(app, db)
 
-login_manager.login_view = 'login'
-login_manager.login_message_category = 'error'
+    login_manager.init_app(app)
 
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(user_id)
+    login_manager.login_view = 'login'
+    login_manager.login_message_category = 'error'
 
-from app import routes, models
+    from app.blueprints.auth import auth
+    from app.blueprints.main import main
+    from app.blueprints.poke import poke
 
-from .utils import poke_db_seed
+    app.register_blueprint(auth)
+    app.register_blueprint(main)
+    app.register_blueprint(poke)
 
-@app.cli.command("seed-db")
-@with_appcontext
-def seed_db_command():
-    """Seeds the pokemon database."""
-    poke_db_seed()
-    print("Database seeded!")
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(user_id)
+    
+    @app.cli.command("seed-db")
+    @with_appcontext
+    def seed_db_command():
+        """Seeds the pokemon database."""
+        poke_db_seed()
+        print("Database seeded!")
+    
+
+    return app
+
+
+
+

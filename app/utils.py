@@ -1,9 +1,9 @@
-from app import app, db
-from flask import Flask, current_app
+from flask import flash, redirect, request, url_for
+from flask_login import current_user
 from flask.cli import with_appcontext
 import click
 import requests
-from .models import Pokemon, db
+from .models import Pokemon, Team, db
 
 
 #Used for search 
@@ -37,7 +37,34 @@ def get_poke_info(poke_name):
         return {"error": error_message}
     
 
-
+def add_pokemon_to_team(pokemon_name):
+    if not current_user.is_authenticated:
+        flash("You need to be signed in to add Pokémon to your team!", "danger")
+        return redirect(url_for('login', next=request.url))
+    
+    pokemon_data = get_poke_info(pokemon_name.lower())
+    if "error" in pokemon_data:
+        flash("Error retrieving Pokémon data. Please search again before adding to your team.", "danger")
+        return None
+    
+    team_count = Team.query.filter_by(user_id=current_user.user_id).count()
+    if team_count < 6:
+        try:
+            new_member = Team(current_user.user_id, pokemon_name.title(), pokemon_data['sprite_url'],
+                              pokemon_data['main_ability'], pokemon_data['base_experience'],
+                              pokemon_data['hp_base'], pokemon_data['atk_base'], pokemon_data['def_base'])
+            
+            print(pokemon_name)
+            db.session.add(new_member)
+            db.session.commit()
+            flash(f"{pokemon_name.title()} added to your team!", "success")
+            return True
+        except Exception as e:
+            flash(f"Error adding Pokémon to your team: {str(e)}", "danger")
+            return None
+    else:
+        flash("You already have 6 Pokémon in your team!", "warning")
+        return None
     
 
 #This seeds the pokemon table with all pokes. Should only be used on initialization

@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block additional_styles %}
-    <link rel="stylesheet" href="../static/styles/search.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/search.css') }}">
 {% endblock %}
 
 {% block title %}

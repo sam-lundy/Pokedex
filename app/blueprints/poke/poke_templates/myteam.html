@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block additional_styles %}
-    <link rel="stylesheet" href="../static/styles/myteam.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/myteam.css') }}">
 {% endblock %}
 
 {% block title %}
@@ -21,7 +21,7 @@
             <div class="pokemon-details">
                 <p>Main Ability: {{ pokemon.main_ability }}</p>
 
-                <form action="{{ url_for('remove_from_team', pokemon_id=pokemon.poke_id) }}" method="post">
+                <form action="{{ url_for('poke.remove_from_team', pokemon_id=pokemon.poke_id) }}" method="post">
                     <button type="submit" class="remove-btn">Remove</button>
                 </form>
             </div>

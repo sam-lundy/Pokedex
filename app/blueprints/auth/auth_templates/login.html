@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block additional_styles %}
-    <link rel="stylesheet" href="../static/styles/login.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/login.css') }}">
 {% endblock %}
 
 {% block title %}
@@ -34,7 +34,7 @@
 
 <div class="login-register">
     <h3>Not yet a member?</h3>
-    <a href="{{ url_for('register') }}">Register Now</a>
+    <a href="{{ url_for('auth.register') }}">Register Now</a>
 </div>
 
 {% endblock %}

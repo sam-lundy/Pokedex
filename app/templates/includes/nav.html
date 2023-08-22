@@ -1,15 +1,15 @@
 <nav class="navigation">
     <ul class="menu">
-        <li><a href="{{ url_for('home') }}">Pokédex</a></li>
-        <li><a href="{{ url_for('about') }}">About</a></li>
-        <li><a href="{{ url_for('search') }}">Search</a></li>
-        <li><a href="{{ url_for('showcase') }}">Discover</a></li>
+        <li><a href="{{ url_for('main.home') }}">Pokédex</a></li>
+        <li><a href="{{ url_for('main.about') }}">About</a></li>
+        <li><a href="{{ url_for('poke.search') }}">Search</a></li>
+        <li><a href="{{ url_for('poke.showcase') }}">Discover</a></li>
         
         {% if current_user.is_authenticated %}
-            <li><a href="{{ url_for('myteam') }}">My Team</a></li>
-            <li><a href="{{ url_for('logout') }}">Sign Out</a></li>
+            <li><a href="{{ url_for('poke.myteam') }}">My Team</a></li>
+            <li><a href="{{ url_for('auth.logout') }}">Sign Out</a></li>
         {% else %}
-        <li><a href="{{ url_for('login') }}">Sign In</a></li>
+        <li><a href="{{ url_for('auth.login') }}">Sign In</a></li>
         {% endif %}
     </ul>
 </nav>
