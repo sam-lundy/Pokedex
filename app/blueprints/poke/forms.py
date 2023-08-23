@@ -9,5 +9,5 @@ class PokemonSearchForm(FlaskForm):
 
 
 class AddToTeamForm(FlaskForm):
-    add_to_team = SubmitField('Add to My Team')
+    add_to_team = SubmitField('Catch Pokémon')
     pokemon_name = StringField(render_kw={"type": "hidden"})

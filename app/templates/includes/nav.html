@@ -3,7 +3,7 @@
         <li><a href="{{ url_for('main.home') }}">Pokédex</a></li>
         <li><a href="{{ url_for('main.about') }}">About</a></li>
         <li><a href="{{ url_for('poke.search') }}">Search</a></li>
-        <li><a href="{{ url_for('poke.showcase') }}">Discover</a></li>
+        <li><a href="{{ url_for('poke.discover') }}">Discover</a></li>
         
         {% if current_user.is_authenticated %}
             <li><a href="{{ url_for('poke.myteam') }}">My Team</a></li>

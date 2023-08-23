@@ -3,6 +3,7 @@ from flask_login import LoginManager
 from config import Config
 from flask_migrate import Migrate
 from .models import db, User
+from flask_moment import Moment
 from flask.cli import with_appcontext
 from .utils import poke_db_seed
 import click
@@ -21,8 +22,9 @@ def create_app():
 
     login_manager.init_app(app)
 
-    login_manager.login_view = 'login'
+    login_manager.login_view = 'auth.login'
     login_manager.login_message_category = 'error'
+    login_manager.login_message = None
 
     from app.blueprints.auth import auth
     from app.blueprints.main import main

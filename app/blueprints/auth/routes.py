@@ -2,7 +2,7 @@ from . import auth
 from .forms import LoginForm, RegisterForm
 from flask import request, render_template, url_for, redirect, flash
 from flask_login import login_user, logout_user, current_user, login_required
-from app.models import User, db
+from app.models import User, Team, db
 from werkzeug.security import check_password_hash
 from sqlalchemy import or_
 
@@ -60,6 +60,10 @@ def register():
 
             try:
                 db.session.add(new_user)
+                db.session.commit()
+
+                new_team = Team(user_id=new_user.id)
+                db.session.add(new_team)
                 db.session.commit()
 
             #Error handling

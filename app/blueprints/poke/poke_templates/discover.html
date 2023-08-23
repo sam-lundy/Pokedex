@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block additional_styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles/showcase.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/discover.css') }}">
 {% endblock %}
 
 {% block title %}
@@ -26,10 +26,10 @@
                     <p>DEF Base: {{ pokemon.def_base }}</p>
 
                     <div class="btn-wrapper">
-                        <form method="POST" action={{ url_for('poke.showcase') }}>
+                        <form method="POST" action={{ url_for('poke.discover') }}>
                             {{ add_form.hidden_tag() }}
                             {{ add_form.pokemon_name(value=pokemon.name, type="hidden") }}
-                            {{ add_form.add_to_team(class='team-btn', value="Add to My Team") }}
+                            {{ add_form.add_to_team(class='catch-btn', value="Catch Pokémon") }}
 
                         </form>
                     </div>
