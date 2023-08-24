@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block additional_styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/profile.css') }}">
+{% endblock %}
+
+{% block title %}
+    My Profile
+{% endblock %}
+
+{% block content %}
+{% include './includes/nav.html'%}
+
+    <div class="profile-container">
+        <!-- Profile Image and Basic Details -->
+        <div class="profile-header">
+            <img src="{{ current_user.profile_picture }}" alt="{{ current_user.username }}'s profile picture" class="profile-picture">
+            <h2>{{ current_user.username }}</h2>
+            <p>{{ current_user.email }}</p>
+        </div>
+
+        <!-- Profile Details -->
+        <div class="profile-details">
+            <h3>About Me</h3>
+            <p>{{ current_user.bio }}</p>
+        </div>
+
+        <!-- Settings and Preferences -->
+        <div class="profile-settings">
+            <h3>Settings</h3>
+            <ul>
+                <li><a href="{{ url_for('auth.change_password') }}">Change Password</a></li>
+                <li><a href="{{ url_for('auth.update_profile') }}">Update Profile</a></li>
+                <li><a href="{{ url_for('auth.notifications') }}">Notification Settings</a></li>
+            </ul>
+        </div>
+    </div>
+
+{% endblock %}
+

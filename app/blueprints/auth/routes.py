@@ -1,9 +1,9 @@
 from . import auth
-from .forms import LoginForm, RegisterForm
+from .forms import LoginForm, RegisterForm, ChangePasswordForm
 from flask import request, render_template, url_for, redirect, flash
 from flask_login import login_user, logout_user, current_user, login_required
 from app.models import User, Team, db
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy import or_
 
 @auth.route('/login', methods=['GET', 'POST'])
@@ -78,3 +78,43 @@ def register():
                 return redirect(url_for('auth.login'))
 
     return render_template('register.html', form=form)
+
+@auth.route('/profile')
+def profile():
+    
+    if not current_user.is_authenticated:
+        flash("Sign in to view your profile.", "warning")
+        return redirect(url_for('auth.login'))
+    else:
+        return render_template('profile.html')
+    
+@auth.route('/change_password', methods=['GET', 'POST'])
+def change_password():
+    form = ChangePasswordForm()
+
+    if form.validate_on_submit():
+        if not check_password_hash(current_user.password, form.current_password.data):
+            flash('Current password is incorrect!', 'danger')
+            return redirect(url_for('auth.change_password'))
+
+        # Check if the new password and its confirmation match
+        if form.new_password.data != form.new_password_conf.data:
+            flash('New password and its confirmation do not match!', 'danger')
+            return redirect(url_for('auth.change_password'))
+
+        # Update the user's password
+        current_user.password = generate_password_hash(form.new_password.data, method='sha256')
+        db.session.commit()
+
+        flash('Your password has been updated!', 'success')
+        return redirect(url_for('auth.profile'))
+
+    return render_template('change_pass.html', form=form)
+
+@auth.route('/update_profile')
+def update_profile():
+    return render_template('update_profile.html')
+
+@auth.route('/notifications')
+def notifications():
+    return render_template('notifications.html')

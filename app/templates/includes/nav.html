@@ -13,8 +13,10 @@
         </div>
         <div class="menu-right">
             {% if current_user.is_authenticated %}
+                <li class="menu-right"><a href="{{ url_for('auth.profile') }}">{{ current_user.username }}</a></li>
                 <li class="menu-right"><a href="{{ url_for('auth.logout') }}">Sign Out</a></li>
             {% else %}
+            <li class="menu-right"><a href="{{ url_for('auth.profile') }}">Profile</a></li>
             <li class="menu-right"><a href="{{ url_for('auth.login') }}">Sign In</a></li>
             {% endif %}
         </div>

@@ -24,3 +24,12 @@ class RegisterForm(FlaskForm):
     password = PasswordField('Password: ', validators=[DataRequired()])
     password_conf = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
     submit = SubmitField('Register')
+
+class ChangePasswordForm(FlaskForm):
+    current_password = PasswordField('Current Password', validators=[DataRequired()])
+    new_password = PasswordField('New Password', validators=[DataRequired()])
+    new_password_conf = PasswordField('Confirm New Password', validators=[
+        DataRequired(),
+        EqualTo('new_password', message='Passwords must match.')  # Ensures the new password and its confirmation match
+    ])
+    submit = SubmitField('Change Password')

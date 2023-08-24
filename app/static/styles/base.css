@@ -29,7 +29,7 @@ a {
     align-items: center;
     margin: 0 auto;
     padding: 0;
-    max-width: 80%;
+    max-width: 60%;
 }
 
 .menu-group {
@@ -48,6 +48,7 @@ a {
 }
 
 .menu-right {
+    display: flex;
     flex-direction: row;
     margin: 0 15px;
     padding: 5px, 10px;
