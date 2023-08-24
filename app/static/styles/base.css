@@ -25,21 +25,45 @@ a {
 
 .menu {
     display: flex;
-    justify-content: center;
-    list-style-type: none;
+    justify-content: space-between;
     align-items: center;
     margin: 0 auto;
     padding: 0;
+    max-width: 80%;
 }
 
-.menu li {
+.menu-group {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.menu-left {
+    flex-direction: row;
+    margin: 0 5px;
+    padding: 5px 10px;
+    letter-spacing: 0.5px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.menu-right {
+    flex-direction: row;
+    margin: 0 15px;
+    padding: 5px, 10px;
+    letter-spacing: 0.5px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+/* .menu li {
     flex-direction: row;
     margin: 0 35px;
     padding: 5px 10px;
     letter-spacing: 0.5px;
     font-weight: bold;
     transition: background-color 0.3s;
-}
+} */
 
 .menu a {
     color: rgb(106, 174, 106);
@@ -48,6 +72,19 @@ a {
 .menu a:hover {
     background-color: rgb(106, 174, 106, 0.3);
     border-radius: 5px;
+}
+
+.home-item {
+    position: relative;
+    left: -20px;
+}
+
+.home-icon {
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    margin-top: 5px;
+    margin-left: -60px;
 }
 
 .alert {

@@ -3,7 +3,7 @@ from flask import render_template, url_for, redirect, flash, abort, session
 from flask_login import current_user, login_required
 from sqlalchemy.sql.expression import func
 from .forms import PokemonSearchForm, AddToTeamForm
-from app.models import Team, Pokemon, db
+from app.models import Team, Pokemon, team_pokemon, db
 from app.utils import add_pokemon_to_team
 from random import sample
 
@@ -76,12 +76,20 @@ def myteam():
 @poke.route('/remove_from_team/<int:pokemon_id>', methods=['POST'])
 @login_required
 def remove_from_team(pokemon_id):
-    pokemon_to_remove = Team.query.get_or_404(pokemon_id) #Will return 404 if id doesn't exist
-    if pokemon_to_remove.user_id != current_user.user.id:
-        abort(403)  # Users can only remove their own pokes
-    db.session.delete(pokemon_to_remove)
-    db.session.commit()
-    flash(f"{pokemon_to_remove.poke_name} has been removed from your team!", "success")
+    user_team_id = current_user.team.id
+    user_team = Team.query.get(user_team_id)
+    pokemon = Pokemon.query.get(pokemon_id)
+    if not pokemon:
+        flash("Pokémon not found!", "warning")
+        return redirect(url_for('poke.myteam'))
+    if user_team:
+        user_team.pokemons.remove(pokemon)
+        db.session.commit()
+        flash(f"{pokemon.name} has been removed from your team!", "success")
+    else:
+        flash(f"{pokemon.name}")
+
+
     return redirect(url_for('poke.myteam'))
 
 

@@ -1,16 +1,23 @@
 <nav class="navigation">
     <ul class="menu">
-        <li><a href="{{ url_for('main.home') }}">Pokédex</a></li>
-        <li><a href="{{ url_for('main.about') }}">About</a></li>
-        <li><a href="{{ url_for('poke.search') }}">Search</a></li>
-        <li><a href="{{ url_for('poke.discover') }}">Discover</a></li>
-        
-        {% if current_user.is_authenticated %}
-            <li><a href="{{ url_for('poke.myteam') }}">My Team</a></li>
-            <li><a href="{{ url_for('auth.logout') }}">Sign Out</a></li>
-        {% else %}
-        <li><a href="{{ url_for('auth.login') }}">Sign In</a></li>
-        {% endif %}
+        <div class="menu-group">
+            <li class="menu-left home-item">
+                <a href="{{ url_for('main.home') }}"><img src="{{ url_for('static', filename='images/poke-icon.png') }}" alt="Home" class="home-icon"></a>
+            </li>
+            <li class="menu-left"><a href="{{ url_for('main.about') }}">About</a></li>
+            <li class="menu-left"><a href="{{ url_for('poke.search') }}">Search</a></li>
+            <li class="menu-left"><a href="{{ url_for('poke.discover') }}">Discover</a></li>
+            {% if current_user.is_authenticated %}
+                <li class="menu-left"><a href="{{ url_for('poke.myteam') }}">My Team</a></li>
+            {% endif %}
+        </div>
+        <div class="menu-right">
+            {% if current_user.is_authenticated %}
+                <li class="menu-right"><a href="{{ url_for('auth.logout') }}">Sign Out</a></li>
+            {% else %}
+            <li class="menu-right"><a href="{{ url_for('auth.login') }}">Sign In</a></li>
+            {% endif %}
+        </div>
     </ul>
 </nav>
 

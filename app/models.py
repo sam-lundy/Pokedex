@@ -22,7 +22,7 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String, nullable=False)
     date_created = db.Column(db.DateTime, default=datetime.utcnow())
     #Relationship
-    team = db.relationship('Team', backref='user', lazy='dynamic')
+    team = db.relationship('Team', backref='user', uselist=False)
 
     def __init__(self, name, email, username, password):
         self.name = name
