@@ -1,10 +1,12 @@
 from . import auth
-from .forms import LoginForm, RegisterForm, ChangePasswordForm
-from flask import request, render_template, url_for, redirect, flash
+from .forms import LoginForm, RegisterForm, ChangePasswordForm, UpdateProfilePictureForm
+from flask import request, render_template, url_for, redirect, flash, current_app
 from flask_login import login_user, logout_user, current_user, login_required
 from app.models import User, Team, db
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy import or_
+from app.utils import save_picture
+import os
 
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
@@ -81,14 +83,16 @@ def register():
 
 @auth.route('/profile')
 def profile():
+    form = UpdateProfilePictureForm()
     
     if not current_user.is_authenticated:
         flash("Sign in to view your profile.", "warning")
         return redirect(url_for('auth.login'))
     else:
-        return render_template('profile.html')
+        return render_template('profile.html', form=form)
     
 @auth.route('/change_password', methods=['GET', 'POST'])
+@login_required
 def change_password():
     form = ChangePasswordForm()
 
@@ -112,9 +116,60 @@ def change_password():
     return render_template('change_pass.html', form=form)
 
 @auth.route('/update_profile')
+@login_required
 def update_profile():
     return render_template('update_profile.html')
 
 @auth.route('/notifications')
+@login_required
 def notifications():
     return render_template('notifications.html')
+
+@auth.route('/update-profile-picture', methods=['POST'])
+@login_required
+def update_profile_picture():
+    form = UpdateProfilePictureForm()
+
+    if form.validate_on_submit():
+        
+        file = form.picture.data
+
+        if not file or file.filename == '':
+            flash('Please select a file.', 'warning')
+            return redirect(url_for('auth.profile'))
+        
+        picture_file = save_picture(file)
+        current_user.profile_picture = picture_file
+        db.session.commit()
+        flash('Your profile picture has been updated!', 'success')
+        return redirect(url_for('auth.profile'))
+    
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(error, 'danger')
+
+    return redirect(url_for('auth.profile'))
+
+
+
+@auth.route('/delete-profile-picture', methods=['POST'])
+@login_required
+def delete_profile_picture():
+    # Default profile picture check, so we don't delete it.
+    if current_user.profile_picture != 'default.jpg':
+        # Create a path to the image
+        picture_path = os.path.join(current_app.root_path, 'static/profile_pics', current_user.profile_picture)
+        
+        # Check if the image exists and then delete it
+        if os.path.exists(picture_path):
+            os.remove(picture_path)
+
+        # Reset the image to the default one
+        current_user.profile_picture = 'default_user_icon.png'
+        db.session.commit()
+        flash("Your profile picture has been deleted!', 'success")
+    else:
+        flash("You don't have a profile picture set.', 'info")
+
+    return redirect(url_for('auth.profile'))

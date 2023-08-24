@@ -1,4 +1,5 @@
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, EmailField, PasswordField, SubmitField, ValidationError
 from wtforms.validators import DataRequired, EqualTo
 from app.models import User
@@ -33,3 +34,11 @@ class ChangePasswordForm(FlaskForm):
         EqualTo('new_password', message='Passwords must match.')  # Ensures the new password and its confirmation match
     ])
     submit = SubmitField('Change Password')
+
+class UpdateProfilePictureForm(FlaskForm):
+    picture = FileField('Update Profile Picture', validators=[
+        FileAllowed(['jpg', 'jpeg', 'png'], 'Images only!')
+    ])
+    submit = SubmitField('Update')
+
+    

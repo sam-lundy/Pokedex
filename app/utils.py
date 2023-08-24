@@ -1,8 +1,11 @@
-from flask import flash, redirect, request, url_for
+from flask import flash, redirect, request, url_for, current_app
 from flask_login import current_user
 from flask.cli import with_appcontext
 import click
 import requests
+import os
+import secrets
+from PIL import Image
 from .models import Pokemon, Team, db
 
 
@@ -83,32 +86,45 @@ def poke_db_seed():
             print(f"Error fetching data for Pokemon ID {i}. Status code: {response.status_code}") 
 
 
+def save_picture(form_picture):
+    random_hex = secrets.token_hex(8)
+    _, f_ext = os.path.splitext(form_picture.filename)
+    picture_fn = random_hex + f_ext
+    picture_path = os.path.join(current_app.root_path, 'static/profile_pics', picture_fn)
+
+    output_size = (125, 125)
+    i = Image.open(form_picture)
+    i.thumbnail(output_size)
+    i.save(picture_path)
+
+    return picture_fn
+
 
 
 #This is a legacy function to query the API. If the Pokemon DB is seeded it is not needed.
-def get_poke_info(pokemon_name):
-    print("Fetching data for Pokémon:", pokemon_name)
-    response = requests.get(BASE_API_URL + pokemon_name.lower(), timeout=10)
+# def get_poke_info(pokemon_name):
+#     print("Fetching data for Pokémon:", pokemon_name)
+#     response = requests.get(BASE_API_URL + pokemon_name.lower(), timeout=10)
     
-    if response.ok:
-        data = response.json()
-        print("API Response:", data)
+#     if response.ok:
+#         data = response.json()
+#         print("API Response:", data)
 
-        if 'name' in data:
-            return {
-                "name": data.get('name', ''),
-                "main_ability": data.get('abilities', [{}])[0].get('ability', {}).get('name', ''),
-                "base_experience": data.get('base_experience', ''),
-                "sprite_url": data.get('sprites', {}).get('front_default', ''),
-                "hp_base": data.get('stats', [{}])[0].get('base_stat', ''),
-                "atk_base": data.get('stats', [{}])[1].get('base_stat', ''),
-                "def_base": data.get('stats', [{}])[2].get('base_stat', '')
-            }
-        else:
-            error_message = f"Unexpected API response structure for {pokemon_name}."
-            print(error_message)  
-            return {"error": error_message}
-    else:
-        error_message = f"Error getting info for {pokemon_name}. Status code: {response.status_code}"
-        print(error_message)  
-        return {"error": error_message}
+#         if 'name' in data:
+#             return {
+#                 "name": data.get('name', ''),
+#                 "main_ability": data.get('abilities', [{}])[0].get('ability', {}).get('name', ''),
+#                 "base_experience": data.get('base_experience', ''),
+#                 "sprite_url": data.get('sprites', {}).get('front_default', ''),
+#                 "hp_base": data.get('stats', [{}])[0].get('base_stat', ''),
+#                 "atk_base": data.get('stats', [{}])[1].get('base_stat', ''),
+#                 "def_base": data.get('stats', [{}])[2].get('base_stat', '')
+#             }
+#         else:
+#             error_message = f"Unexpected API response structure for {pokemon_name}."
+#             print(error_message)  
+#             return {"error": error_message}
+#     else:
+#         error_message = f"Error getting info for {pokemon_name}. Status code: {response.status_code}"
+#         print(error_message)  
+#         return {"error": error_message}

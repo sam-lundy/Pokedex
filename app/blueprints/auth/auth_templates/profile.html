@@ -12,14 +12,59 @@
 {% include './includes/nav.html'%}
 
     <div class="profile-container">
-        <!-- Profile Image and Basic Details -->
-        <div class="profile-header">
-            <img src="{{ current_user.profile_picture }}" alt="{{ current_user.username }}'s profile picture" class="profile-picture">
-            <h2>{{ current_user.username }}</h2>
-            <p>{{ current_user.email }}</p>
-        </div>
 
-        <!-- Profile Details -->
+        <div class="profile-header">
+
+            <div class="user-details">
+                <h2>{{ current_user.username }}</h2>
+                <p>{{ current_user.name }}</p>
+                <p>{{ current_user.email }}</p><br>
+                <p>User created on:</p>
+                <p>{{ current_user.date_created.strftime('%B %d, %Y') }}</p>
+
+
+            </div>
+
+            <div class="image-container">
+                <img src="{{ url_for('static', filename='profile_pics/' + (current_user.profile_picture or 'default_user_icon.png')) }}" class="profile-picture">
+                
+
+                <form action="{{ url_for('auth.update_profile_picture') }}" method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    <div id="selected-filename">No file selected</div>
+                    
+                    <div class="button-container">
+                        <div class="file-input-container">
+                            <label for="file-input" class="my-custom-file-label">Browse...</label>
+                            <input type="file" name="picture" id="file-input" accept="image/*">
+                        </div>
+                        <input type="submit" value="Change Profile Picture" id="submit-button" disabled class="btn btn-primary">
+                    </div>
+                </form>
+                
+            
+                <script>
+                    document.getElementById('file-input').addEventListener('change', function() {
+                        const filename = this.value.split('\\').pop(); // Extract the filename from the full path
+                        document.getElementById('selected-filename').textContent = filename ? filename : "No file selected";
+            
+                        if (this.value) {
+                            document.getElementById('submit-button').removeAttribute('disabled');
+                        } else {
+                            document.getElementById('submit-button').setAttribute('disabled', 'true');
+                        }
+                    });
+                </script>
+
+                {% if current_user.profile_picture != 'default_user_icon.png' %}
+                    <form action="{{ url_for('auth.delete_profile_picture') }}" method="post">
+                        <input type="submit" value="Delete Profile Picture" class="btn btn-danger">
+                    </form>
+                {% endif %}
+            </div>
+        </div> 
+
+
         <div class="profile-details">
             <h3>About Me</h3>
             <p>{{ current_user.bio }}</p>

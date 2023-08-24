@@ -44,6 +44,17 @@ def create_app():
         """Seeds the pokemon database."""
         poke_db_seed()
         print("Database seeded!")
+
+    #Updates all users without profile pictures to have the default
+    @app.cli.command("update-profile-pictures")
+    def update_profile_pictures():
+        """Ensure all users have a profile picture."""
+        users_without_pictures = User.query.filter_by(profile_picture=None).all()
+        for user in users_without_pictures:
+            user.profile_picture = 'default_user_icon.png'
+
+        db.session.commit()
+        print("Updated profile pictures for all users.")
     
 
     return app
