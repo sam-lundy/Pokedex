@@ -14,15 +14,17 @@
     <div class="profile-container">
 
         <div class="profile-header">
-
             <div class="user-details">
                 <h2>{{ current_user.username }}</h2>
                 <p>{{ current_user.name }}</p>
                 <p>{{ current_user.email }}</p><br>
                 <p>User created on:</p>
                 <p>{{ current_user.date_created.strftime('%B %d, %Y') }}</p>
-
-
+                <h3>Settings</h3>
+                <ul>
+                    <li><a href="{{ url_for('auth.change_password') }}">Change Password</a></li>
+                    <li><a href="{{ url_for('auth.notifications') }}">Notification Settings</a></li>
+                </ul>
             </div>
 
             <div class="image-container">
@@ -30,7 +32,7 @@
                 
 
                 <form action="{{ url_for('auth.update_profile_picture') }}" method="POST" enctype="multipart/form-data">
-                    {{ form.hidden_tag() }}
+                    {{ pic_form.hidden_tag() }}
                     <div id="selected-filename">No file selected</div>
                     
                     <div class="button-container">
@@ -42,20 +44,6 @@
                     </div>
                 </form>
                 
-            
-                <script>
-                    document.getElementById('file-input').addEventListener('change', function() {
-                        const filename = this.value.split('\\').pop(); // Extract the filename from the full path
-                        document.getElementById('selected-filename').textContent = filename ? filename : "No file selected";
-            
-                        if (this.value) {
-                            document.getElementById('submit-button').removeAttribute('disabled');
-                        } else {
-                            document.getElementById('submit-button').setAttribute('disabled', 'true');
-                        }
-                    });
-                </script>
-
                 {% if current_user.profile_picture != 'default_user_icon.png' %}
                     <form action="{{ url_for('auth.delete_profile_picture') }}" method="post">
                         <input type="submit" value="Delete Profile Picture" class="btn btn-danger">
@@ -64,22 +52,101 @@
             </div>
         </div> 
 
+        <div class="battle-stats">
+            <h3>Battle Stats</h3>
+            
+            <div class="stats-row">
+                <div class="stat-item">
+                    <span class="stat-number">{{ current_user.wins }}</span>
+                    <span class="stat-label">Wins</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">{{ current_user.losses }}</span>
+                    <span class="stat-label">Losses</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">{{ current_user.draws }}</span>
+                    <span class="stat-label">Draws</span>
+                </div>
+                <!-- Add other stats as needed -->
+            </div>
+        </div>
+
 
         <div class="profile-details">
             <h3>About Me</h3>
-            <p>{{ current_user.bio }}</p>
+            <div id="bio-container">
+                <p>{{ current_user.bio if current_user.bio else 'No bio available. Click edit to add one!' }}</p>
+                <!-- Need to get this working at some point -->
+                <!-- <span id="char-counter" class="hidden">500 characters remaining</span> -->
+                <button onclick="toggleBioEditing()">Edit Bio</button> <!-- This is the button to edit the bio -->
+            </div>
+            <div id="bio-form-container" style="display: none;">
+                <form action="{{ url_for('auth.profile') }}" method="POST">
+                    {{ bio_form.hidden_tag() }}
+                    <label for="bio">Tell us more about yourself.</label>
+                    {{ bio_form.bio(class="custom-form-control", id="bio") }}
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </form>
+                <button type="button" onclick="toggleBioEditing()">Cancel</button>
+            </div>            
         </div>
-
         <!-- Settings and Preferences -->
-        <div class="profile-settings">
+        <!-- <div class="profile-settings">
             <h3>Settings</h3>
             <ul>
                 <li><a href="{{ url_for('auth.change_password') }}">Change Password</a></li>
-                <li><a href="{{ url_for('auth.update_profile') }}">Update Profile</a></li>
                 <li><a href="{{ url_for('auth.notifications') }}">Notification Settings</a></li>
             </ul>
-        </div>
+        </div> -->
     </div>
+
+<script>
+    document.getElementById('file-input').addEventListener('change', function() {
+        const filename = this.value.split('\\').pop(); // Extract the filename from the full path
+        document.getElementById('selected-filename').textContent = filename ? filename : "No file selected";
+
+        if (this.value) {
+            document.getElementById('submit-button').removeAttribute('disabled');
+        } else {
+            document.getElementById('submit-button').setAttribute('disabled', 'true');
+        }
+    });
+</script>
+
+
+<script>
+    // Handler for file-input change
+    document.getElementById('file-input').addEventListener('change', function() {
+        const filename = this.value.split('\\').pop(); // Extract the filename from the full path
+        document.getElementById('selected-filename').textContent = filename ? filename : "No file selected";
+
+        if (this.value) {
+            document.getElementById('submit-button').removeAttribute('disabled');
+        } else {
+            document.getElementById('submit-button').setAttribute('disabled', 'true');
+        }
+    });
+
+    function toggleBioEditing() {
+        const bioContainer = document.getElementById('bio-container');
+        const bioFormContainer = document.getElementById('bio-form-container');
+        const charCounter = document.getElementById('char-counter');
+        
+        if (bioContainer.style.display === 'none') {
+            bioContainer.style.display = 'block';
+            bioFormContainer.style.display = 'none';
+            charCounter.classList.remove('visible');
+            charCounter.classList.add('hidden');
+        } else {
+            bioContainer.style.display = 'none';
+            bioFormContainer.style.display = 'block';
+            charCounter.classList.remove('hidden');
+            charCounter.classList.add('visible');
+        }
+    }
+
+</script>
 
 {% endblock %}
 

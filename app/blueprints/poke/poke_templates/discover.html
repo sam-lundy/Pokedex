@@ -14,31 +14,37 @@
     <div class="showcase-container">
         <h2>Random Pokémon Selection</h2>
         <div class="showcase-poke-flex">
+
         {% for pokemon in poke_list %}
             <div class="pokemon-card">
-                <h3 class="pokemon-name">{{ pokemon.name }}</h3>
-                <img src="{{ pokemon.sprite_url }}" alt="{{ pokemon.name }}", class="pokemon-image">
-                <div class="pokemon-details">
-                    <p>Main Ability: {{ pokemon.main_ability }}</p>
-                    <p>Base Experience: {{ pokemon.base_experience }}</p>
-                    <p>HP Base: {{ pokemon.hp_base }}</p>
-                    <p>ATK Base: {{ pokemon.atk_base }}</p>
-                    <p>DEF Base: {{ pokemon.def_base }}</p>
-
-                    <div class="btn-wrapper">
-                        <form method="POST" action={{ url_for('poke.discover') }}>
-                            {{ add_form.hidden_tag() }}
-                            {{ add_form.pokemon_name(value=pokemon.name, type="hidden") }}
-                            {{ add_form.add_to_team(class='catch-btn', value="Catch Pokémon") }}
-
-                        </form>
+                <div class="name-and-image">
+                    <img src="{{ pokemon.sprite_url }}" alt="{{ pokemon.name }}" class="pokemon-image">
+                    <h3 class="pokemon-name">{{ pokemon.name }}</h3>
+                </div>
+                
+                <div class="stats-details">
+                    <div class="ability-exp">
+                        <p>Main Ability: {{ pokemon.main_ability }}</p>
+                        <p>Base Experience: {{ pokemon.base_experience }}</p>
                     </div>
-  
+                    <div class="base-stats">
+                        <p>HP Base: {{ pokemon.hp_base }}</p>
+                        <p>ATK Base: {{ pokemon.atk_base }}</p>
+                        <p>DEF Base: {{ pokemon.def_base }}</p>
+                    </div>
+                </div>                
+                
+                <div class="btn-wrapper">
+                    <form method="POST" action={{ url_for('poke.discover') }}>
+                        {{ add_form.hidden_tag() }}
+                        {{ add_form.pokemon_name(value=pokemon.name, type="hidden") }}
+                        {{ add_form.add_to_team(class='catch-btn', value="Catch Pokémon") }}
+                    </form>
                     <a href="https://www.serebii.net/pokedex-swsh/{{ pokemon.name.lower() }}/" target="_blank">
-                        <button class="serebii-btn">View Details on Serebii.net</button>
+                        <button class="serebii-btn">View Details</button>
                     </a>
-                </div> 
-            </div>
+                </div>
+        </div>
         {% endfor %}
         </div>
     </div>

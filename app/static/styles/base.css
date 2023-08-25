@@ -5,6 +5,9 @@
     font-family: 'Handjet', cursive;
 }
 
+/* light green color used around the app */
+/* rgb(198, 224, 198) */ 
+
 body {
     height: 100%;
     background-color: rgb(68, 77, 87);
@@ -56,15 +59,6 @@ a {
     font-weight: bold;
     transition: background-color 0.3s;
 }
-
-/* .menu li {
-    flex-direction: row;
-    margin: 0 35px;
-    padding: 5px 10px;
-    letter-spacing: 0.5px;
-    font-weight: bold;
-    transition: background-color 0.3s;
-} */
 
 .menu a {
     color: rgb(106, 174, 106);

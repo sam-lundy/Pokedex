@@ -5,17 +5,17 @@
 {% endblock %}
 
 {% block title %}
-    Pokédex Search
+    Trainer Temple
 {% endblock %}
 
 {% block content %}
 {% include './includes/nav.html'%}
 
-    <h1 class="pokedex-h1">Welcome to the Pokémon Search Tool!</h1>
+    <h1 class="pokedex-h1">Welcome to Trainer Temple!</h1>
     <div class="logo-container">
         <img src="{{ url_for('static', filename='images/poke-logo.jpg') }}" class="pokedex-img">
     </div>
-    <i><h2 class="pokedex-h2">Please navigate to the Search menu to discover Pokémon.</h2></i>
+    <i><h2 class="pokedex-h2">Please navigate to the Search menu to search for a specific Pokémon.</h2></i>
+    <i><h2 class="pokedex-h2">Create your account now to select your team and get to battle!</h2></i>
 
 {% endblock %}
-

@@ -1,5 +1,5 @@
 from . import auth
-from .forms import LoginForm, RegisterForm, ChangePasswordForm, UpdateProfilePictureForm
+from .forms import LoginForm, RegisterForm, ChangePasswordForm, UpdateProfilePictureForm, UpdateProfileForm
 from flask import request, render_template, url_for, redirect, flash, current_app
 from flask_login import login_user, logout_user, current_user, login_required
 from app.models import User, Team, db
@@ -7,6 +7,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy import or_
 from app.utils import save_picture
 import os
+
 
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
@@ -81,16 +82,30 @@ def register():
 
     return render_template('register.html', form=form)
 
-@auth.route('/profile')
+
+@auth.route('/profile', methods=['GET', 'POST'])
 def profile():
-    form = UpdateProfilePictureForm()
+    pic_form = UpdateProfilePictureForm()
+    bio_form = UpdateProfileForm()
     
     if not current_user.is_authenticated:
         flash("Sign in to view your profile.", "warning")
         return redirect(url_for('auth.login'))
-    else:
-        return render_template('profile.html', form=form)
     
+    print(current_user.bio)
+
+    if not current_user.bio:
+        current_user.bio = ""
+
+    if bio_form.validate_on_submit():
+        current_user.bio = bio_form.bio.data
+        db.session.commit()
+        flash("Your bio has been updated.", "info")
+        return redirect(url_for('auth.profile'))
+    else:
+        return render_template('profile.html', pic_form=pic_form, bio_form=bio_form)
+    
+
 @auth.route('/change_password', methods=['GET', 'POST'])
 @login_required
 def change_password():
@@ -115,15 +130,12 @@ def change_password():
 
     return render_template('change_pass.html', form=form)
 
-@auth.route('/update_profile')
-@login_required
-def update_profile():
-    return render_template('update_profile.html')
 
 @auth.route('/notifications')
 @login_required
 def notifications():
     return render_template('notifications.html')
+
 
 @auth.route('/update-profile-picture', methods=['POST'])
 @login_required
@@ -150,7 +162,6 @@ def update_profile_picture():
                 flash(error, 'danger')
 
     return redirect(url_for('auth.profile'))
-
 
 
 @auth.route('/delete-profile-picture', methods=['POST'])

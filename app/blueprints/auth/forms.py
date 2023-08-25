@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
-from wtforms import StringField, EmailField, PasswordField, SubmitField, ValidationError
-from wtforms.validators import DataRequired, EqualTo
+from wtforms import StringField, EmailField, PasswordField, SubmitField, ValidationError, TextAreaField
+from wtforms.validators import DataRequired, EqualTo, Length
 from app.models import User
 
 
@@ -41,4 +41,7 @@ class UpdateProfilePictureForm(FlaskForm):
     ])
     submit = SubmitField('Update')
 
-    
+class UpdateProfileForm(FlaskForm):
+    bio = TextAreaField('About Me', validators=[Length(max=500)])
+    submit = SubmitField('Update Profile')
+

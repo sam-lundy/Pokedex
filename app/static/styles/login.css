@@ -20,8 +20,6 @@ body, html {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* rgb(198, 224, 198) */ 
-
 .form-group {
     margin-bottom: 20px;
     width: 100%;
@@ -79,5 +77,3 @@ h2 {
     margin-top: 20px;
     color: rgb(198, 224, 198);
 }
-
-

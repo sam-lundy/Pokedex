@@ -90,8 +90,10 @@ h1 {
 
 .catch-btn {
     background-color: green;
-    color: rgb(198, 224, 198);
+    color: white;
     text-align: center;
+    border-radius: 5px;
+    padding: 8px;
 }
 
 body {

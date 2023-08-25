@@ -20,7 +20,7 @@
 
 {% if pokemon_data %}
     <div class="pokemon-card">
-        <h2 class="pokemon-name">{{ pokemon_name }}</h2>
+        <h2 class="pokemon-name">{{ pokemon_name|title }}</h2>
         <img src="{{ pokemon_data.sprite_url }}" alt="{{ pokemon_name }}", class="pokemon-image">
         <div class="pokemon-details">
             <p>Main Ability: {{ pokemon_data.main_ability }}</p>

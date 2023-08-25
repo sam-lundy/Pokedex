@@ -22,6 +22,7 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String, nullable=False)
     date_created = db.Column(db.DateTime, default=datetime.utcnow())
     profile_picture = db.Column(db.String(120), nullable=True, default='default_user_icon.png')
+    bio = db.Column(db.String(500))
     #Relationship
     team = db.relationship('Team', backref='user', uselist=False)
 
