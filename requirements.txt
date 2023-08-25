@@ -3,7 +3,7 @@ blinker==1.6.2
 certifi==2023.7.22
 charset-normalizer==3.2.0
 click==8.1.6
-Flask==2.3.2
+Flask==2.2.5
 Flask-Login==0.6.2
 Flask-Migrate==4.0.4
 Flask-Moment==1.0.5
@@ -19,10 +19,10 @@ packaging==23.1
 Pillow==10.0.0
 psycopg2==2.9.7
 psycopg2-binary==2.9.7
-python-dotenv==1.0.0
+python-dotenv==
 requests==2.31.0
 SQLAlchemy==2.0.20
 typing_extensions==4.7.1
 urllib3==2.0.4
-Werkzeug==2.3.7
+Werkzeug==2.2.3
 WTForms==3.0.1
