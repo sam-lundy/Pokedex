@@ -35,8 +35,6 @@
     margin-top: 10px;
 }
 
-
-
 .profile-container .btn.btn-danger:hover {
     background-color: #cc0000;
 }
@@ -136,10 +134,6 @@
     text-align: center;
 }
 
-.custom-file-label:hover {
-    background: #b3b3b3;
-}
-
 .button-container {
     display: flex;
     flex-direction: column;
@@ -193,17 +187,6 @@
     transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
-.char-hidden {
-    opacity: 0;
-    visibility: hidden;
-    display: block;
-}
-
-.char-visible {
-    opacity: 1;
-    visibility: visible;
-    display: block;
-}
 
 .battle-stats {
     text-align: center;

@@ -101,19 +101,6 @@
         </div> -->
     </div>
 
-<script>
-    document.getElementById('file-input').addEventListener('change', function() {
-        const filename = this.value.split('\\').pop(); // Extract the filename from the full path
-        document.getElementById('selected-filename').textContent = filename ? filename : "No file selected";
-
-        if (this.value) {
-            document.getElementById('submit-button').removeAttribute('disabled');
-        } else {
-            document.getElementById('submit-button').setAttribute('disabled', 'true');
-        }
-    });
-</script>
-
 
 <script>
     // Handler for file-input change
