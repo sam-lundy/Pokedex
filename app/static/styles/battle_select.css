@@ -1,0 +1,38 @@
+.battle-select-container h2, 
+.battle-select-container h3 {
+    color: #d8d1d1;
+    text-align: center;
+}
+
+.battle-select-container .user-container {
+    list-style-type: none;
+    margin: 20px 0;
+    text-align: center;
+    padding: 10px;
+    background-color: #f4f4f4;
+    border-radius: 5px;
+    width: 30%;
+    margin: 20px auto;
+    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.user-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.battle-select-container .user-container .btn {
+    background-color: #333; /* Dark Gray */
+    color: #ececec;
+    border: none;
+    margin-left: 10px;
+    padding: 10px 20px;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.battle-select-container .user-container .btn:hover {
+    background-color: #555;
+}

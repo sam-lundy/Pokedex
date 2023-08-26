@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block additional_styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/battle_select.css') }}">
+{% endblock %}
+
+{% block title %}
+    Select an Opponent
+{% endblock %}
+
+{% block content %}
+{% include './includes/nav.html'%}
+
+<div class="battle-select-container">
+  <h2>Choose a Trainer to Battle</h2>
+  <h3>Select a trainer from the dropdown and click 'Start Battle' to challenge them!</h3>
+
+  {% for user in users %}
+
+  <div class="user-container">
+        <span>{{ user.username }}</span> 
+        <form action="{{ url_for('poke.battle_arena', defender_id=user.id) }}" method="post" class="inline-form">
+            <button type="submit" class="btn btn-primary">Attack</button>
+        </form>
+  </div>
+
+{% endfor %}
+
+</div>
+
+{% endblock %}
+

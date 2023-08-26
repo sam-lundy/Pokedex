@@ -1,4 +1,4 @@
-from flask import flash, redirect, request, url_for, current_app
+from flask import flash, redirect, request, url_for, current_app, session
 from flask_login import current_user
 from flask.cli import with_appcontext
 import click
@@ -99,6 +99,31 @@ def save_picture(form_picture):
 
     return picture_fn
 
+def determine_winner(attacker_pokemon, defender_pokemon):
+    attack_power = attacker_pokemon.atk_base - defender_pokemon.def_base
+    defense_power = defender_pokemon.atk_base - attacker_pokemon.def_base
+
+    if attack_power > defense_power:
+        return "attacker"
+    elif defense_power > attack_power:
+        return "defender"
+    else:
+        return "draw"
+
+
+def get_pokemon_for_user(user, index=0):
+    """Return the first Pokémon for a user or None."""
+    if user and user.team:
+        pokemons = user.team.pokemons.all()
+        if index < len(pokemons):
+            return pokemons[index]
+    return None
+
+def reset_battle_progress():
+    session.pop('attacker_pokemon_index', None)
+    session.pop('defender_pokemon_index', None)
+    session.pop('attacker_score', None)
+    session.pop('defender_score', None)
 
 
 #This is a legacy function to query the API. If the Pokemon DB is seeded it is not needed.

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Battle Summary
+{% endblock %}
+
+{% block content %}
+{% include './includes/nav.html'%}
+
+    <h2>Battle Summary</h2>
+    <p>{{ summary }}</p>
+    <a href="{{ url_for('poke.battle_select') }}" class="btn btn-primary">Return to Battle Selection</a>
+{% endblock %}

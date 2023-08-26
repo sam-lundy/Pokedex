@@ -17,7 +17,8 @@
     {% if team.pokemons.count() == 0 %}
         <h3>You haven't caught any Pokémon!</h3>
     {% endif %}
-
+    
+<div class="cards-grid-wrapper">
     <div class="cards-grid">
 
         {% for pokemon in team.pokemons.all() %}
@@ -39,5 +40,7 @@
         </div>
         {% endfor %}
     </div>
+</div>
+    
 </div>
 {% endblock %}

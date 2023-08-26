@@ -8,48 +8,76 @@ from flask.cli import with_appcontext
 from .utils import poke_db_seed
 import click
 
-app = Flask(__name__)
-app.config.from_object(Config)
-app.config['SECRET_KEY']
+def create_app():
 
-login_manager =  LoginManager()
+    app = Flask(__name__)
+    app.config.from_object(Config)
+    app.config['SECRET_KEY']
 
-db.init_app(app)
+    login_manager =  LoginManager()
 
-migrate = Migrate(app, db)
+    db.init_app(app)
 
-login_manager.init_app(app)
+    migrate = Migrate(app, db)
 
-login_manager.login_view = 'auth.login'
-login_manager.login_message_category = 'error'
-login_manager.login_message = None
+    login_manager.init_app(app)
 
-from app.blueprints.auth import auth
-from app.blueprints.main import main
-from app.blueprints.poke import poke
+    login_manager.login_view = 'auth.login'
+    login_manager.login_message_category = 'error'
+    login_manager.login_message = None
 
-app.register_blueprint(auth)
-app.register_blueprint(main)
-app.register_blueprint(poke)
+    from app.blueprints.auth import auth
+    from app.blueprints.main import main
+    from app.blueprints.poke import poke
 
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(user_id)
+    app.register_blueprint(auth)
+    app.register_blueprint(main)
+    app.register_blueprint(poke)
 
-@app.cli.command("seed-db")
-@with_appcontext
-def seed_db_command():
-    """Seeds the pokemon database."""
-    poke_db_seed()
-    print("Database seeded!")
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(user_id)
+    
+    @app.cli.command("seed-db")
+    @with_appcontext
+    def seed_db_command():
+        """Seeds the pokemon database."""
+        poke_db_seed()
+        print("Database seeded!")
 
-#Updates all users without profile pictures to have the default
-@app.cli.command("update-profile-pictures")
-def update_profile_pictures():
-    """Ensure all users have a profile picture."""
-    users_without_pictures = User.query.filter_by(profile_picture=None).all()
-    for user in users_without_pictures:
-        user.profile_picture = 'default_user_icon.png'
+    #Updates all users without profile pictures to have the default
+    @app.cli.command("update-profile-pictures")
+    def update_profile_pictures():
+        """Ensure all users have a profile picture."""
+        users_without_pictures = User.query.filter_by(profile_picture=None).all()
+        for user in users_without_pictures:
+            user.profile_picture = 'default_user_icon.png'
 
-    db.session.commit()
-    print("Updated profile pictures for all users.")
+        db.session.commit()
+        print("Updated profile pictures for all users.")
+    
+
+    #resets user stats
+    @app.cli.command("update-user-results")
+    def update_user_results():
+        """Ensure all users have initialized wins, losses, and draws."""
+        # Fetch all users where wins, losses, or draws is None
+        users_to_update = User.query.filter().all()
+
+        # Iterate through the list of users and update their records
+        for user in users_to_update:
+            user.wins = 0
+            user.losses = 0
+            user.draws = 0
+            db.session.commit()
+
+        # Commit the changes to the database
+        
+        print("Updated wins, losses, and draws for all users.")
+
+
+    return app
+
+
+
+

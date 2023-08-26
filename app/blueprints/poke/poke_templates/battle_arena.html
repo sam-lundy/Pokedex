@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block additional_styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/battle_arena.css') }}">
+    <style>
+        .battle-container {
+            background-image: url('{{ url_for('static', filename='images/arena_background.png') }}');
+        }
+    </style>
+{% endblock %}
+
+{% block title %}
+    Pokémon Battle!
+{% endblock %}
+
+{% block content %}
+{% include './includes/nav.html'%}
+
+    <div class="battle-container">
+        <div class="player-names">
+            <h2>{{ attacker.username }} vs {{ defender.username }}
+        </div>
+
+        <div class="player">
+            <h3>{{ attacker_pokemon.name }}</h3>
+            <img src="{{ attacker_pokemon.sprite_url }}" alt="{{ attacker_pokemon.name }}">
+            <p>HP: {{ attacker_pokemon.hp_base }}</p>
+            <p>Attack: {{ attacker_pokemon.atk_base }}</p>
+            <p>Defense: {{ attacker_pokemon.def_base }}</p>
+        </div>
+
+        <div class="player">
+            <h3>{{ defender_pokemon.name }}</h3>
+            <img src="{{ defender_pokemon.sprite_url }}" alt="{{ defender_pokemon.name }}">
+            <p>HP: {{ defender_pokemon.hp_base }}</p>
+            <p>Attack: {{ defender_pokemon.atk_base }}</p>
+            <p>Defense: {{ defender_pokemon.def_base }}</p>
+        </div>
+    </div>
+
+    <div class="buttons-container">
+        <form action="{{ url_for('poke.battle_fight', defender_id=defender.id) }}" method="post">
+            <button type="submit" class="btn btn-success">Fight</button>
+        </form>
+
+        <form action="{{ url_for('poke.next_battle', defender_id=defender.id) }}" method="post">
+            <input type="hidden" name="defender_id" value="{{ defender.id }}">
+            <button type="submit" class="btn btn-primary">Next Battle</button>
+        </form>
+        
+        <a href="{{ url_for('poke.battle_select') }}" class="btn btn-danger">Exit Battle</a>
+    </div>
+
+{% endblock %}

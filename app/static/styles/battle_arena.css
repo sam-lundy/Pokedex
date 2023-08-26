@@ -1,0 +1,82 @@
+/* General styling */
+body {
+    background-color: #ececec;
+}
+
+h2 {
+    color: #333;
+    text-align: center;
+}
+
+p {
+    color: #555;
+    text-align: center;
+}
+
+/* Battle arena styling */
+.battle-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
+    height: 80vh;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    margin: 2em 0;
+    padding: 1em;
+    border-radius: 10px;
+    box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.2);
+}
+
+.player {
+    width: 20%; /* You can adjust this */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.7); /* white with 70% opacity */
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+.player-names {
+    background-color: rgba(255, 255, 255, 0.7); /* white with 70% opacity */
+    padding: 10px 20px;
+    border-radius: 10px;
+    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+.player img {
+    max-width: 70%;
+    height: auto;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Stats styling */
+.player p {
+    background-color: #f4f4f4;
+    padding: 0.5em 1em;
+    margin: 0.5em 0;
+    border-radius: 5px;
+    width: 80%;
+    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.player h2, .player h3 {
+    margin-top: 1em;
+}
+
+.player h2 {
+    font-size: 1.5em;
+    margin-bottom: 1em;
+}
+
+.buttons-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1em; /* This creates space between the buttons */
+    margin-top: 2em;
+}
+

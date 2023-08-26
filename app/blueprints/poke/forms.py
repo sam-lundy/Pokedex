@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
+from wtforms import StringField, SubmitField, SelectField
 from wtforms.validators import DataRequired
+from app.models import User
 
 
 class PokemonSearchForm(FlaskForm):
@@ -11,3 +12,7 @@ class PokemonSearchForm(FlaskForm):
 class AddToTeamForm(FlaskForm):
     add_to_team = SubmitField('Catch Pokémon')
     pokemon_name = StringField(render_kw={"type": "hidden"})
+
+class ChooseDefenderForm(FlaskForm):
+    defender_id = SelectField('Choose a Trainer to Battle', validators=[DataRequired()])
+    submit = SubmitField('Start Battle')

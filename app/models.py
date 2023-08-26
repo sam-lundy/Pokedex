@@ -1,6 +1,6 @@
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 
 
@@ -23,8 +23,13 @@ class User(db.Model, UserMixin):
     date_created = db.Column(db.DateTime, default=datetime.utcnow())
     profile_picture = db.Column(db.String(120), nullable=True, default='default_user_icon.png')
     bio = db.Column(db.String(500))
+    wins = db.Column(db.Integer, default=0)
+    losses = db.Column(db.Integer, default=0)
+    draws = db.Column(db.Integer, default=0)
     #Relationship
     team = db.relationship('Team', backref='user', uselist=False)
+    battles_attacked = db.relationship('Battle', back_populates='attacker', foreign_keys='Battle.attacker_id')
+    battles_defended = db.relationship('Battle', back_populates='defender', foreign_keys='Battle.defender_id')
 
     def __init__(self, name, email, username, password):
         self.name = name
@@ -62,3 +67,17 @@ class Pokemon(db.Model):
         self.hp_base = hp_base
         self.atk_base = atk_base
         self.def_base = def_base
+
+class Battle(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    attacker_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    defender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    attacker_pokemon_id = db.Column(db.Integer, db.ForeignKey('pokemon.id'), nullable=False)
+    defender_pokemon_id = db.Column(db.Integer, db.ForeignKey('pokemon.id'), nullable=False)
+    result = db.Column(db.String(50))
+    battle_date = db.Column(db.DateTime, default=datetime.utcnow)
+
+    attacker = db.relationship('User', back_populates='battles_attacked', foreign_keys=[attacker_id])
+    defender = db.relationship('User', back_populates='battles_defended', foreign_keys=[defender_id])
+    attacker_pokemon = db.relationship('Pokemon', foreign_keys=[attacker_pokemon_id])
+    defender_pokemon = db.relationship('Pokemon', foreign_keys=[defender_pokemon_id])
