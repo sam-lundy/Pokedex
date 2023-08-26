@@ -34,26 +34,18 @@ def search():
         pokemon = Pokemon.query.filter_by(name=pokemon_name).first()
 
         if pokemon:
-            pokemon_data = {
-                "name": pokemon.name,
-                "main_ability": pokemon.main_ability,
-                "base_experience": pokemon.base_exp,
-                "sprite_url": pokemon.sprite_url,
-                "hp_base": pokemon.hp_base,
-                "atk_base": pokemon.atk_base,
-                "def_base": pokemon.def_base
-            }
-            session['pokemon_data'] = pokemon_data
+            session['pokemon_name'] = pokemon_name
+            pokemon_data = pokemon
         else:
             error_message = f"{pokemon_name} was not found in the database."
 
     elif add_form.validate_on_submit():
         if not current_user.is_authenticated:
             flash("You need to be logged in to catch Pokémon!", "danger")
-            return redirect(url_for('auth.login', next=url_for('poke.discover')))
+            return redirect(url_for('auth.login', next=url_for('poke.search')))
         
         #If the pokemon_data isn't found in session, will default to empty dict
-        pokemon_name = session.get('pokemon_data', {}).get('name', '')
+        pokemon_name = session.get('pokemon_name', '')
         result = add_pokemon_to_team(pokemon_name)
 
         if result:
@@ -61,8 +53,8 @@ def search():
             return redirect(url_for('poke.myteam'))
         
 
-    return render_template('search.html', form=search_form, add_form=add_form,
-                           pokemon_data=pokemon_data, pokemon_name=pokemon_name, error_message=error_message)
+    return render_template('search.html', form=search_form, add_form=add_form, pokemon_name=pokemon_name,
+                            pokemon=pokemon_data, error_message=error_message)
 
 
 @poke.route('/myteam')
@@ -126,7 +118,7 @@ def battle_select():
     return render_template('battle_select.html', users=users)
 
 
-@poke.route('/battle/<int:defender_id>', methods=['GET', 'POST'])
+@poke.route('/battle/<int:defender_id>', methods=['POST'])
 @login_required
 def battle_arena(defender_id):
     attacker = current_user
@@ -290,3 +282,5 @@ def battle_summary(defender_id):
 
     return render_template("battle_summary.html", summary=summary, attacker_wins=attacker_score, defender_wins=defender_score,
                             attacker_team=attacker_team, defender_team=defender_team, defender=defender, attacker_id=attacker_id)
+
+

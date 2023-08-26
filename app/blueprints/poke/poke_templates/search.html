@@ -18,16 +18,15 @@
     {{ form.poke_submit(class='pokemon-btn') }}
 </form>
 
-{% if pokemon_data %}
+{% if pokemon %}
     <div class="pokemon-card">
         <h2 class="pokemon-name">{{ pokemon_name|title }}</h2>
-        <img src="{{ pokemon_data.sprite_url }}" alt="{{ pokemon_name }}", class="pokemon-image">
+        <img src="{{ pokemon.sprite_url }}" alt="{{ pokemon_name }}", class="pokemon-image">
         <div class="pokemon-details">
-            <p>Main Ability: {{ pokemon_data.main_ability }}</p>
-            <p>Base Experience: {{ pokemon_data.base_experience }}</p>
-            <p>HP Base: {{ pokemon_data.hp_base }}</p>
-            <p>ATK Base: {{ pokemon_data.atk_base }}</p>
-            <p>DEF Base: {{ pokemon_data.def_base }}</p>
+            <p>Main Ability: {{ pokemon.main_ability }}</p>
+            <p>HP Base: {{ pokemon.hp_base }}</p>
+            <p>ATK Base: {{ pokemon.atk_base }}</p>
+            <p>DEF Base: {{ pokemon.def_base }}</p>
 
             <form method="POST">
                 {{ add_form.hidden_tag() }}

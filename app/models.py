@@ -53,20 +53,28 @@ class Pokemon(db.Model):
     name = db.Column(db.String(50), unique=True, nullable=False)
     sprite_url = db.Column(db.String(150))
     main_ability = db.Column(db.String(50))
-    base_exp = db.Column(db.Integer)
     hp_base = db.Column(db.Integer)
     atk_base = db.Column(db.Integer)
     def_base = db.Column(db.Integer)
+    sp_atk = db.Column(db.Integer)
+    sp_def = db.Column(db.Integer)
+    speed = db.Column(db.Integer)
+    type1 = db.Column(db.String(20))
+    type2 = db.Column(db.String(20), nullable=True)
 
 
-    def __init__(self, name, sprite_url, main_ability, base_exp, hp_base, atk_base, def_base):
+    def __init__(self, name, sprite_url, main_ability, hp_base, atk_base, def_base, sp_atk, sp_def, speed, type1, type2):
         self.name = name
         self.sprite_url = sprite_url
         self.main_ability = main_ability
-        self.base_exp = base_exp
         self.hp_base = hp_base
         self.atk_base = atk_base
         self.def_base = def_base
+        self.sp_atk = sp_atk
+        self.sp_def = sp_def
+        self.speed = speed
+        self.type1 = type1
+        self.type2 = type2
 
 class Battle(db.Model):
     id = db.Column(db.Integer, primary_key=True)

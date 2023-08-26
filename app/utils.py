@@ -5,6 +5,7 @@ import click
 import requests
 import os
 import secrets
+import time
 from PIL import Image
 from .models import Pokemon, Team, db
 
@@ -62,26 +63,37 @@ def add_pokemon_to_team(pokemon_name):
 
 def poke_db_seed():
 
-    for i in range(1, LIMIT + 1):
-        response = requests.get(BASE_API_URL + str(i), timeout=10)
+    for i in range(1, 950):
+        response = requests.get(BASE_API_URL + str(i), timeout=30)
         if response.ok:
             data = response.json()
             existing_pokemon = Pokemon.query.filter_by(name=data['name']).first()
             if not existing_pokemon:
+                if len(data['types']) > 1:
+                    type2 = data['types'][1]['type']['name']
+                else:
+                    type2 = None
+
                 pokemon = Pokemon(
                     name=data['name'],
                     main_ability=data['abilities'][0]['ability']['name'],
-                    base_exp=data['base_experience'],
                     sprite_url=data['sprites']['front_default'],
                     hp_base=data['stats'][0]['base_stat'],
                     atk_base=data['stats'][1]['base_stat'],
-                    def_base=data['stats'][2]['base_stat']
+                    def_base=data['stats'][2]['base_stat'],
+                    sp_atk=data['stats'][3]['base_stat'],
+                    sp_def=data['stats'][4]['base_stat'],
+                    speed=data['stats'][5]['base_stat'],
+                    type1=data['types'][0]['type']['name'],
+                    type2=type2
                 )
                 db.session.add(pokemon)
                 db.session.commit()
                 print(f"Added {data['name']} to the database.")
+                time.sleep(2)
             else:
                  print(f"{data['name']} already exists in the database.")
+                 time.sleep(2)
         else:
             print(f"Error fetching data for Pokemon ID {i}. Status code: {response.status_code}") 
 
@@ -124,6 +136,20 @@ def reset_battle_progress():
     session.pop('defender_pokemon_index', None)
     session.pop('attacker_score', None)
     session.pop('defender_score', None)
+
+
+def type_multiplier(attacking_type, defending_type1, defending_type2=None):
+    multiplier1 = TYPE_EFFECTIVENESS.get(attacking_type, {}).get(defending_type1, 1.0)
+    
+    if defending_type2:
+        multiplier2 = TYPE_EFFECTIVENESS.get(attacking_type, {}).get(defending_type2, 1.0)
+        
+        # If one of the multipliers is zero, the overall effectiveness is zero.
+        if multiplier1 == 0 or multiplier2 == 0:
+            return 0
+        return multiplier1 * multiplier2
+    
+    return multiplier1
 
 
 #This is a legacy function to query the API. If the Pokemon DB is seeded it is not needed.
