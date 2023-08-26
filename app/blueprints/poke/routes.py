@@ -2,8 +2,8 @@ from . import poke
 from flask import render_template, url_for, redirect, request, flash, abort, session
 from flask_login import current_user, login_required
 from sqlalchemy.sql.expression import func
-from .forms import PokemonSearchForm, AddToTeamForm, ChooseDefenderForm
-from app.models import Team, Pokemon, User, db
+from .forms import PokemonSearchForm, AddToTeamForm
+from app.models import Team, Pokemon, User, Battle, db
 from app.utils import add_pokemon_to_team, determine_winner, get_pokemon_for_user, reset_battle_progress
 from random import sample
 
@@ -180,6 +180,23 @@ def battle_fight(defender_id):
     else:
         result = "It's a draw!"
 
+    new_battle = Battle(
+        attacker_id=current_user.id,
+        defender_id=defender_id,
+        attacker_pokemon_id=attacker_pokemon.id,
+        defender_pokemon_id=defender_pokemon.id,
+        result=outcome
+    )
+
+    db.session.add(new_battle)
+    db.session.commit()
+
+
+    attacker_pokemons = current_user.team.pokemons.all() if current_user.team else []
+    defender_pokemons = defender.team.pokemons.all() if defender.team else []
+
+    if session['attacker_pokemon_index'] + 1 >= len(attacker_pokemons) or session['defender_pokemon_index'] + 1 >= len(defender_pokemons):
+        return redirect(url_for('poke.battle_summary', defender_id=defender_id))
 
     return render_template("battle_result.html", defender=defender, result=result, attacker_score=session['attacker_score'], 
                            defender_score=session['defender_score'], defender_id=defender_id)
@@ -245,10 +262,31 @@ def reset_battle():
 @poke.route('/battle/<int:defender_id>/summary')
 @login_required
 def battle_summary(defender_id):
+
+    attacker_id = current_user.id
     defender = User.query.get(defender_id)
 
-    summary = f"Battle results: {current_user.username} ({session['attacker_score']}) vs {defender.username} ({session['defender_score']})"
+    attacker_score = session.get('attacker_score', 0)
+    defender_score = session.get('defender_score', 0)
+
+    if attacker_score > defender_score:
+        current_user.wins += 1
+        defender.losses += 1
+    elif attacker_score < defender_score:
+        current_user.losses += 1
+        defender.wins += 1
+    else:
+        current_user.draws += 1
+        defender.draws += 1
+
+    db.session.commit()
+
+    attacker_team = current_user.team.pokemons.all() if current_user.team else []
+    defender_team = defender.team.pokemons.all() if defender.team else []
+
+    summary = f"Battle results: {current_user.username} ({current_user.wins}) vs {defender.username} ({defender.wins})"
 
     reset_battle_progress()
 
-    return render_template("battle_summary.html", summary=summary)
+    return render_template("battle_summary.html", summary=summary, attacker_wins=attacker_score, defender_wins=defender_score,
+                            attacker_team=attacker_team, defender_team=defender_team, defender=defender, attacker_id=attacker_id)

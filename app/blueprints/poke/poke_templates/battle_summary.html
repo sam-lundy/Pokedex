@@ -4,10 +4,58 @@
     Battle Summary
 {% endblock %}
 
+{% block additional_styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/battle_summary.css') }}">
+{% endblock %}
+
 {% block content %}
 {% include './includes/nav.html'%}
 
+<div class="battle-summary-container">
     <h2>Battle Summary</h2>
-    <p>{{ summary }}</p>
+    
+    <div class="user-profiles">
+        <div class="user-profile">
+            {% if current_user.profile_picture == 'profile_pics/default_user_icon.png' %}
+                <img src="{{ url_for('static', filename='profile_pics/default_user_icon.png') }}" />
+            {% else %}
+                <img src="{{ url_for('static', filename='profile_pics/' + current_user.profile_picture) }}" />
+            {% endif %}
+            <p>{{ current_user.username }}</p>
+        </div>
+
+        <div class="user-profile">
+            {% if defender.profile_picture == 'profile_pics/default_user_icon.png' %}
+                <img src="{{ url_for('static', filename='profile_pics/default_user_icon.png') }}" />
+            {% else %}
+                <img src="{{ url_for('static', filename='profile_pics/' + defender.profile_picture) }}" />
+            {% endif %}
+            <p>{{ defender.username }}</p>
+        </div>
+    </div>
+    
+    <div class="user-score">
+        {{ summary }}
+    </div>
+
+    <div class="teams">
+        <div class="team attacker-team-scoreboard">
+            {% for pokemon in attacker_team %}
+                <img src="{{ pokemon.sprite_url }}" alt="{{ pokemon.name }}">
+                <p>{{ pokemon.name }}</p>
+            {% endfor %}
+        </div>
+        
+        <div class="team defender-team-scoreboard">
+            {% for pokemon in defender_team %}
+                <img src="{{ pokemon.sprite_url }}" alt="{{ pokemon.name }}">
+                <p>{{ pokemon.name }}</p>
+            {% endfor %}
+        </div>
+    </div>
+
     <a href="{{ url_for('poke.battle_select') }}" class="btn btn-primary">Return to Battle Selection</a>
+</div>
+
 {% endblock %}
+
