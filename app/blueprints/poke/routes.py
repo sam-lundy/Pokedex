@@ -1,11 +1,11 @@
 from . import poke
-from flask import render_template, url_for, redirect, request, flash, abort, session
+from flask import render_template, url_for, redirect, request, flash, abort, session, jsonify
 from flask_login import current_user, login_required
 from sqlalchemy.sql.expression import func
 from .forms import PokemonSearchForm, AddToTeamForm
 from app.models import Team, Pokemon, User, Battle, db
-from app.utils import add_pokemon_to_team, determine_winner, get_pokemon_for_user, reset_battle_progress
-from random import sample
+from app.utils import add_pokemon_to_team, determine_winner, get_pokemon_for_user, reset_battle_progress, type_multiplier
+
 
 
 #DEBUGGING SESSION
@@ -114,6 +114,7 @@ def discover():
 @poke.route('/battle', methods=['GET'])
 @login_required
 def battle_select():
+    reset_battle_progress()
     users = User.query.filter(User.id != current_user.id).all()
     return render_template('battle_select.html', users=users)
 
@@ -157,41 +158,74 @@ def battle_fight(defender_id):
     attacker = current_user
     defender = User.query.get(defender_id)
 
-
     attacker_pokemon = get_pokemon_for_user(attacker, session['attacker_pokemon_index'])
     defender_pokemon = get_pokemon_for_user(defender, session['defender_pokemon_index'])
 
-    outcome = determine_winner(attacker_pokemon, defender_pokemon)
+    # Determine fast and slow Pokémon based on speed
+    fast_pokemon, slow_pokemon = (attacker_pokemon, defender_pokemon) if attacker_pokemon.speed > defender_pokemon.speed else (defender_pokemon, attacker_pokemon)
 
-    if outcome == "attacker":
-        result = f"{attacker.username}'s {attacker_pokemon.name} wins!"
-        session['attacker_score'] += 1
-    elif outcome == "defender":
-        result = f"{defender.username}'s {defender_pokemon.name} wins!"
-        session['defender_score'] += 1
+    print("Fast Pokémon:", fast_pokemon.name)
+    print("Slow Pokémon:", slow_pokemon.name)
+    # Fast Pokémon's damage calculation
+    multiplier = type_multiplier(fast_pokemon.type1, slow_pokemon.type1, slow_pokemon.type2)
+    damage_to_slow = (max(fast_pokemon.atk_base, fast_pokemon.sp_atk) * multiplier) - (max(slow_pokemon.def_base, slow_pokemon.sp_def) * 0.5 + min(slow_pokemon.def_base, slow_pokemon.sp_def) * 0.5)
+    damage_to_slow = max(damage_to_slow, 0)  # No negative damage
+    slow_pokemon.hp_base -= damage_to_slow
+    slow_pokemon.hp_base = max(0, slow_pokemon.hp_base)
+
+    # If the slow Pokémon is alive, it retaliates
+    damage_to_fast = 0
+    if slow_pokemon.hp_base > 0:
+        multiplier = type_multiplier(slow_pokemon.type1, fast_pokemon.type1, fast_pokemon.type2)
+        damage_to_fast = (max(slow_pokemon.atk_base, slow_pokemon.sp_atk) * multiplier) - (max(fast_pokemon.def_base, fast_pokemon.sp_def) * 0.5 + min(fast_pokemon.def_base, fast_pokemon.sp_def) * 0.5)
+        damage_to_fast = max(damage_to_fast, 0)  # No negative damage
+        fast_pokemon.hp_base -= damage_to_fast
+        fast_pokemon.hp_base = max(0, fast_pokemon.hp_base)
+
+    # Determine damage to "attacker" and "defender" based on who the fast Pokémon was
+    damage_to_attacker = damage_to_fast if fast_pokemon == defender_pokemon else damage_to_slow
+    damage_to_defender = damage_to_slow if fast_pokemon == defender_pokemon else damage_to_fast
+    print("Damage to Slow:", damage_to_slow)
+    print("Damage to Fast:", damage_to_fast)
+
+
+    return jsonify({
+        'attacker_hp': max(0, attacker_pokemon.hp_base),
+        'defender_hp': max(0, defender_pokemon.hp_base),
+        'damage_to_attacker': damage_to_attacker,
+        'damage_to_defender': damage_to_defender
+    })
+
+
+@poke.route('/battle/<int:defender_id>/next_pokemon', methods=['POST'])
+@login_required
+def next_pokemon(defender_id):
+    # Identify which player's Pokémon was defeated
+    defeated_player = request.form.get('defeated_player')
+
+    # Increment the correct Pokémon index and get the next Pokémon
+    if defeated_player == 'attacker':
+        session['attacker_pokemon_index'] += 1
+        next_pokemon = get_pokemon_for_user(current_user, session['attacker_pokemon_index'])
     else:
-        result = "It's a draw!"
+        session['defender_pokemon_index'] += 1
+        defender = User.query.get(defender_id)
+        next_pokemon = get_pokemon_for_user(defender, session['defender_pokemon_index'])
+    print(next_pokemon)
 
-    new_battle = Battle(
-        attacker_id=current_user.id,
-        defender_id=defender_id,
-        attacker_pokemon_id=attacker_pokemon.id,
-        defender_pokemon_id=defender_pokemon.id,
-        result=outcome
-    )
+    # If there's a next Pokémon, return its details
+    if next_pokemon:
+        return jsonify({
+            'has_next': True,
+            'name': next_pokemon.name,
+            'hp_base': next_pokemon.hp_base,
+            'sprite_url': next_pokemon.sprite_url,
+            'type1': next_pokemon.type1,
+            'type2': next_pokemon.type2
+        })
 
-    db.session.add(new_battle)
-    db.session.commit()
-
-
-    attacker_pokemons = current_user.team.pokemons.all() if current_user.team else []
-    defender_pokemons = defender.team.pokemons.all() if defender.team else []
-
-    if session['attacker_pokemon_index'] + 1 >= len(attacker_pokemons) or session['defender_pokemon_index'] + 1 >= len(defender_pokemons):
-        return redirect(url_for('poke.battle_summary', defender_id=defender_id))
-
-    return render_template("battle_result.html", defender=defender, result=result, attacker_score=session['attacker_score'], 
-                           defender_score=session['defender_score'], defender_id=defender_id)
+    # If there's no next Pokémon, return a flag indicating that
+    return jsonify({'has_next': False})
 
 
 @poke.route('/battle/<int:defender_id>/next', methods=['POST'])
@@ -210,37 +244,35 @@ def next_battle(defender_id):
     if session['attacker_pokemon_index'] >= len(attacker_pokemons) or session['defender_pokemon_index'] >= len(defender_pokemons):
         # Determine the overall winner and update user stats
         if session['attacker_score'] > session['defender_score']:
+            outcome = 'win'
             current_user.wins += 1
             defender.losses += 1
             flash(f"{current_user.username} wins the battle series!", 'success')
         elif session['attacker_score'] < session['defender_score']:
+            outcome = 'loss'
             current_user.losses += 1
             defender.wins += 1
             flash(f"{defender.username} wins the battle series!", 'success')
         else:
+            outcome = 'draw'
             current_user.draws += 1
             defender.draws += 1
             flash("The battle series is a draw!", 'info')
         
+        new_battle = Battle(
+            attacker_id=current_user.id,
+            defender_id=defender_id,
+            result=outcome
+        )
+
+        db.session.add(new_battle)
         db.session.commit()
         
-        # Reset battle series session variables
-        reset_battle_progress()
 
         return redirect(url_for('poke.battle_select'))
 
     # Redirect to the battle arena for the next match-up
     return redirect(url_for('poke.battle_arena', defender_id=defender_id))
-
-
-
-@poke.route('/battle/<int:defender_id>/result')
-@login_required
-def battle_result(defender_id):
-    defender = User.query.get(defender_id)
-    result = request.args.get('result')
-
-    return render_template("battle_result.html", defender=defender, result=result)
 
 
 @poke.route('/reset_battle')

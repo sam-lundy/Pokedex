@@ -2,11 +2,6 @@
 
 {% block additional_styles %}
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/battle_arena.css') }}">
-    <style>
-        .battle-container {
-            background-image: url('{{ url_for('static', filename='images/arena_background.png') }}');
-        }
-    </style>
 {% endblock %}
 
 {% block title %}
@@ -17,38 +12,176 @@
 {% include './includes/nav.html'%}
 
     <div class="battle-container">
-        <div class="player-names">
-            <h2>{{ attacker.username }} vs {{ defender.username }}
+        <div class="player-section attacker-section">
+            <h2>{{ attacker.username }}</h2>
+        
+            <div class="player attacker">
+                <h3>{{ attacker_pokemon.name|title }}</h3>
+                <img src="{{ attacker_pokemon.sprite_url }}" alt="{{ attacker_pokemon.name }}">
+                <div class="hp-bar">
+                    <div class="current-hp attacker-hp"></div>
+                </div>
+                <p id="attacker-hp-text">HP: {{ attacker_pokemon.hp_base }}/{{ attacker_pokemon.hp_base }}</p>
+                <p>Attack: {{ attacker_pokemon.atk_base }}</p>
+                <p>Defense: {{ attacker_pokemon.def_base }}</p>
+            </div>
         </div>
 
-        <div class="player">
-            <h3>{{ attacker_pokemon.name }}</h3>
-            <img src="{{ attacker_pokemon.sprite_url }}" alt="{{ attacker_pokemon.name }}">
-            <p>HP: {{ attacker_pokemon.hp_base }}</p>
-            <p>Attack: {{ attacker_pokemon.atk_base }}</p>
-            <p>Defense: {{ attacker_pokemon.def_base }}</p>
-        </div>
+        <div class="vs-text">vs</div>
 
-        <div class="player">
-            <h3>{{ defender_pokemon.name }}</h3>
-            <img src="{{ defender_pokemon.sprite_url }}" alt="{{ defender_pokemon.name }}">
-            <p>HP: {{ defender_pokemon.hp_base }}</p>
-            <p>Attack: {{ defender_pokemon.atk_base }}</p>
-            <p>Defense: {{ defender_pokemon.def_base }}</p>
+        <div class="player-section defender-section">
+            <h2>{{ defender.username }}</h2>
+        
+            <div class="player defender">
+                <h3>{{ defender_pokemon.name|title }}</h3>
+                <img src="{{ defender_pokemon.sprite_url }}" alt="{{ defender_pokemon.name }}">
+                <div class="hp-bar">
+                    <div class="current-hp defender-hp"></div>
+                </div>
+                <p id="defender-hp-text">HP: {{ defender_pokemon.hp_base }}/{{ defender_pokemon.hp_base }}</p>
+                <p>Attack: {{ defender_pokemon.atk_base }}</p>
+                <p>Defense: {{ defender_pokemon.def_base }}</p>
+            </div>
         </div>
     </div>
+    <div id="battle-message" class="battle-message"></div>
 
     <div class="buttons-container">
-        <form action="{{ url_for('poke.battle_fight', defender_id=defender.id) }}" method="post">
-            <button type="submit" class="btn btn-success">Fight</button>
-        </form>
-
-        <form action="{{ url_for('poke.next_battle', defender_id=defender.id) }}" method="post">
-            <input type="hidden" name="defender_id" value="{{ defender.id }}">
-            <button type="submit" class="btn btn-primary">Next Battle</button>
-        </form>
-        
+        <button id="fight-button" class="btn btn-success">Attack</button>
+        <button id="next-battle-button" class="btn btn-primary">Next Battle</button>
         <a href="{{ url_for('poke.battle_select') }}" class="btn btn-danger">Exit Battle</a>
     </div>
 
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fightButton = document.getElementById('fight-button');
+        const nextBattleButton = document.getElementById('next-battle-button');
+        const attackerHPText = document.getElementById('attacker-hp-text');
+        const defenderHPText = document.getElementById('defender-hp-text');
+        const attackerHPBar = document.querySelector('.attacker-hp');
+        const defenderHPBar = document.querySelector('.defender-hp');
+    
+        let attackerBaseHP = {{ attacker_pokemon.hp_base }};
+        let defenderBaseHP = {{ defender_pokemon.hp_base }};
+        let attackerCurrentHP = attackerBaseHP;
+        let defenderCurrentHP = defenderBaseHP;
+    
+        fightButton.addEventListener('click', function() {
+            fetch('{{ url_for("poke.battle_fight", defender_id=defender.id) }}', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Deduct damage values from each Pokémon's HP
+                // console logs to see damage
+                console.log("Initial Attacker HP:", attackerCurrentHP);
+                console.log("Initial Defender HP:", defenderCurrentHP);
+
+                console.log("Received Damage to Attacker:", data.damage_to_attacker);
+                console.log("Received Damage to Defender:", data.damage_to_defender);
+
+                // Reversed this logic, it is damage dealt BY the attacker or defender
+                attackerCurrentHP -= data.damage_to_defender;
+                defenderCurrentHP -= data.damage_to_attacker;
+
+                console.log("Updated Attacker HP:", attackerCurrentHP);
+                console.log("Updated Defender HP:", defenderCurrentHP);
+            
+                // Update HP bars and text for both Pokémon
+                updateHPBar(attackerHPBar, attackerCurrentHP, attackerBaseHP);
+                updateHPBar(defenderHPBar, defenderCurrentHP, defenderBaseHP);
+                attackerHPText.innerText = `HP: ${Math.max(0, attackerCurrentHP)}/${attackerBaseHP}`;
+                defenderHPText.innerText = `HP: ${Math.max(0, defenderCurrentHP)}/${defenderBaseHP}`;
+            
+                // Disable the fight button if either Pokémon has fainted
+                if (attackerCurrentHP <= 0 || defenderCurrentHP <= 0) {
+                    fightButton.disabled = true;
+                    nextBattleButton.disabled = false;
+                } else {
+                    //reenable fightButton if both pokemon still fighting
+                    fightButton.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error("Error during the fight:", error);
+                fightButton.disabled = false
+            });
+        });
+
+        nextBattleButton.addEventListener('click', function() {
+            let defeatedPlayer = attackerCurrentHP <= 0 ? 'attacker' : 'defender';
+            // ternary operator. basically if attacker's hp is 0, defeated is attacker, else defender
+            // fetches next pokemon for defeated player to the backend
+            fetch('{{ url_for("poke.next_pokemon", defender_id=defender.id) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ defeated_player: defeatedPlayer })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.has_next) {
+                    fightButton.disabled = false;
+                    nextBattleButton.disabled = true;
+
+                    // Update the UI with the next Pokémon's details
+                    // For example:
+                    if (defeatedPlayer == 'attacker') {
+                        document.querySelector('.player.attacker img').src = data.sprite_url;
+                        document.querySelector('.player.attacker h3').textContent = data.name;
+                        updateHPBar(attackerHPBar, data.hp_base, data.hp_base);
+                        attackerHPText.innerText = `HP: ${data.hp_base}/${data.hp_base}`;
+                        attackerCurrentHP = data.hp_base;  // Reset the current HP variable
+                        attackerBaseHP = data.hp_base;
+                        // ... Update other details ...
+                    } else {
+                        document.querySelector('.player.defender img').src = data.sprite_url;
+                        document.querySelector('.player.defender h3').textContent = data.name;
+                        updateHPBar(defenderHPBar, data.hp_base, data.hp_base);
+                        defenderHPText.innerText = `HP: ${data.hp_base}/${data.hp_base}`;
+                        defenderCurrentHP = data.hp_base;  // Reset the current HP variable
+                        defenderBaseHP = data.hp_base;
+                        // ... Update other details ...
+                    }
+                } else {
+                    // End of battles
+                    document.getElementById('battle-message').textContent = 'No more Pokémon! Battle ended.';
+                    nextBattleButton.disabled = true;
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching the next Pokémon:", error);
+                nextBattleButton.disabled = false;
+            });
+        });
+    
+        function updateHPBar(hpElement, currentHP, maxHP) {
+            let percentage = (currentHP / maxHP) * 100;
+
+            // Update the width of the HP bar to represent the current HP percentage
+            hpElement.style.width = percentage + '%';
+        
+            // Adjust color based on HP percentage
+            if (percentage > 50) {
+                hpElement.style.backgroundColor = 'green';
+            } else if (percentage > 20) {
+                hpElement.style.backgroundColor = 'yellow';
+            } else if (percentage <= 0) {
+                hpElement.style.backgroundColor = 'transparent';
+            } else {
+                hpElement.style.backgroundColor = 'red';
+            }
+            
+        
+            // Update the displayed HP value, ensuring it doesn't show a negative value
+            let hpValueElement = hpElement.parentElement.nextElementSibling;
+            hpValueElement.textContent = Math.max(0, currentHP) + '/' + maxHP;
+        }
+    });
+
+</script>
+
 {% endblock %}
+
