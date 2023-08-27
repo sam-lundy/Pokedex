@@ -149,7 +149,7 @@ def battle_arena(defender_id):
     session['defender_id'] = defender_id
 
     return render_template("battle_arena.html", attacker=attacker, defender=defender, 
-                           attacker_pokemon=attacker_pokemon, defender_pokemon=defender_pokemon)
+                           attacker_pokemon=attacker_pokemon, defender_pokemon=defender_pokemon, defender_id=defender_id)
 
 
 @poke.route('/battle/<int:defender_id>/fight', methods=['POST'])

@@ -149,6 +149,7 @@
                     // End of battles
                     document.getElementById('battle-message').textContent = 'No more Pokémon! Battle ended.';
                     nextBattleButton.disabled = true;
+                    window.location.href = '{{ url_for("poke.battle_summary", defender_id=defender_id) }}';
                 }
             })
             .catch(error => {
