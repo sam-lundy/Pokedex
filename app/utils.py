@@ -7,6 +7,7 @@ import os
 import secrets
 import time
 from PIL import Image
+import random
 from .models import Pokemon, Team, db
 
 
@@ -133,25 +134,24 @@ def save_picture(form_picture):
 
     return picture_fn
 
-def determine_winner(attacker_pokemon, defender_pokemon):
-    attack_power = attacker_pokemon.atk_base - defender_pokemon.def_base
-    defense_power = defender_pokemon.atk_base - attacker_pokemon.def_base
-
-    if attack_power > defense_power:
-        return "attacker"
-    elif defense_power > attack_power:
-        return "defender"
-    else:
-        return "draw"
-
 
 def get_pokemon_for_user(user, index=0):
     """Return the first Pokémon for a user or None."""
     if user and user.team:
         pokemons = user.team.pokemons.all()
+        print("Fetching Pokémon for User:", user.username, "at Index:", index)
         if index < len(pokemons):
+            print("Returning Pokémon:", pokemons[index].name)
             return pokemons[index]
+        else:
+            print("No Pokémon found for Index:", index)
     return None
+
+def get_total_pokemon_for_user(user):
+    """Return total number of pokemon for user"""
+    if user and user.team:
+        return len(user.team.pokemons.all())
+    return 0
 
 def reset_battle_progress():
     session.pop('attacker_pokemon_index', None)
@@ -172,6 +172,33 @@ def type_multiplier(attacking_type, defending_type1, defending_type2=None):
         return multiplier1 * multiplier2
     
     return multiplier1
+
+import random
+
+def calculate_damage(attacker, defender):
+    multiplier = type_multiplier(attacker.type1, defender.type1, defender.type2)
+    attacking_stat = max(attacker.atk_base, attacker.sp_atk) * multiplier
+    defending_stat = (max(defender.def_base, defender.sp_def) * 0.5 + min(defender.def_base, defender.sp_def) * 0.5)
+
+    damage = max(attacking_stat - defending_stat, 1) #min damage is 1
+
+    # Random multiplier (for instance, a value between 0.85 and 1.15)
+    random_multiplier = random.uniform(0.9, 1.10)
+    damage *= random_multiplier
+
+    # Critical hit chance
+    if random.uniform(0, 1) < 0.05:
+        damage *= 1.5
+        return round(damage), "Critial hit!"
+
+    # Miss chance
+    if random.uniform(0, 1) < 0.10:
+        damage = 0
+        return damage, f"{attacker.name} missed!"
+
+    return round(damage), f"{attacker.name} dealt {round(damage)} damage to {defender.name}!"
+
+
 
 
 #This is a legacy function to query the API. If the Pokemon DB is seeded it is not needed.

@@ -37,6 +37,18 @@ class User(db.Model, UserMixin):
         self.username = username
         self.password = generate_password_hash(password)
 
+    def get_wins(self):
+        return Battle.query.filter_by(attacker_id=self.id, result='win').count() + \
+            Battle.query.filter_by(defender_id=self.id, result='lose').count()
+
+    def get_losses(self):
+        return Battle.query.filter_by(attacker_id=self.id, result='lose').count() + \
+               Battle.query.filter_by(defender_id=self.id, result='win').count()
+
+    def get_draws(self):
+        return Battle.query.filter((Battle.attacker_id == self.id) | (Battle.defender_id == self.id), 
+                                   Battle.result == 'draw').count()
+
 
 class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -80,12 +92,8 @@ class Battle(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     attacker_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     defender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    attacker_pokemon_id = db.Column(db.Integer, db.ForeignKey('pokemon.id'), nullable=False)
-    defender_pokemon_id = db.Column(db.Integer, db.ForeignKey('pokemon.id'), nullable=False)
     result = db.Column(db.String(50))
     battle_date = db.Column(db.DateTime, default=datetime.utcnow)
 
     attacker = db.relationship('User', back_populates='battles_attacked', foreign_keys=[attacker_id])
     defender = db.relationship('User', back_populates='battles_defended', foreign_keys=[defender_id])
-    attacker_pokemon = db.relationship('Pokemon', foreign_keys=[attacker_pokemon_id])
-    defender_pokemon = db.relationship('Pokemon', foreign_keys=[defender_pokemon_id])

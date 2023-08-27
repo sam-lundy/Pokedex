@@ -135,5 +135,13 @@ p {
 
 .battle-message {
     font-size: 20px;
-    color: aliceblue;
+    color: #333;
+    background-color: rgba(255, 255, 255, 0.8);  /* 80% opaque white */
+    padding: 10px 20px;
+    border-radius: 10px;
+    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.2);
+    margin-top: 20px;
+    text-align: center;
+    transition: opacity 0.3s ease-in-out;
+    opacity: 0;  /* Initially hidden */
 }

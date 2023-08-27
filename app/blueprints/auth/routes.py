@@ -87,6 +87,10 @@ def register():
 def profile():
     pic_form = UpdateProfilePictureForm()
     bio_form = UpdateProfileForm()
+
+    wins = current_user.get_wins()
+    losses = current_user.get_losses()
+    draws = current_user.get_draws()
     
     if not current_user.is_authenticated:
         flash("Sign in to view your profile.", "warning")
@@ -103,7 +107,7 @@ def profile():
         flash("Your bio has been updated.", "info")
         return redirect(url_for('auth.profile'))
     else:
-        return render_template('profile.html', pic_form=pic_form, bio_form=bio_form)
+        return render_template('profile.html', pic_form=pic_form, bio_form=bio_form, wins=wins, losses=losses, draws=draws)
     
 
 @auth.route('/change_password', methods=['GET', 'POST'])

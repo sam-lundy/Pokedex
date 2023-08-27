@@ -4,7 +4,7 @@ from flask_login import current_user, login_required
 from sqlalchemy.sql.expression import func
 from .forms import PokemonSearchForm, AddToTeamForm
 from app.models import Team, Pokemon, User, Battle, db
-from app.utils import add_pokemon_to_team, determine_winner, get_pokemon_for_user, reset_battle_progress, type_multiplier
+from app.utils import add_pokemon_to_team, get_pokemon_for_user, reset_battle_progress, calculate_damage
 
 
 
@@ -119,28 +119,40 @@ def battle_select():
     return render_template('battle_select.html', users=users)
 
 
-@poke.route('/battle/<int:defender_id>', methods=['POST'])
+@poke.route('/battle/<int:defender_id>', methods=['GET', 'POST'])
 @login_required
 def battle_arena(defender_id):
     attacker = current_user
     defender = User.query.get(defender_id)
 
-    if 'attacker_score' not in session:
-        session['attacker_score'] = 0
-    if 'defender_score' not in session:
-        session['defender_score'] = 0
 
-    if 'attacker_pokemon_index' not in session:
-        session['attacker_pokemon_index'] = 0
-    if 'defender_pokemon_index' not in session:
-        session['defender_pokemon_index'] = 0
+    session.setdefault('attacker_pokemon_index', 0)
+    session.setdefault('defender_pokemon_index', 0)
+    session.setdefault('attacker_score', 0)
+    session.setdefault('defender_score', 0)
+
+    attacker_pokemon = get_pokemon_for_user(attacker, session.get('attacker_pokemon_index'))
+    defender_pokemon = get_pokemon_for_user(defender, session.get('defender_pokemon_index'))
+
+
+    session['attacker_current_hp'] = attacker_pokemon.hp_base
+    session['defender_current_hp'] = defender_pokemon.hp_base
+
+
+    print("Initializing Attacker HP:", session['attacker_current_hp'])
+    print("Initializing Defender HP:", session['defender_current_hp'])
 
     if not defender:
         flash('Invalid defender selected!', 'error')
         return redirect(url_for('poke.battle_select'))
 
-    attacker_pokemon = get_pokemon_for_user(attacker, session.get('attacker_pokemon_index', 0))
-    defender_pokemon = get_pokemon_for_user(defender, session.get('defender_pokemon_index', 0))
+
+    print("Attacker Pokémon Index:", session['attacker_pokemon_index'])
+    print("Defender Pokémon Index:", session['defender_pokemon_index'])
+
+    print("Attacker's Pokémon:", attacker_pokemon.name)
+    print("Defender's Pokémon:", defender_pokemon.name)
+
 
     if not attacker_pokemon or not defender_pokemon:
         flash('Either you or the defender does not have a Pokémon!', 'error')
@@ -161,39 +173,78 @@ def battle_fight(defender_id):
     attacker_pokemon = get_pokemon_for_user(attacker, session['attacker_pokemon_index'])
     defender_pokemon = get_pokemon_for_user(defender, session['defender_pokemon_index'])
 
-    # Determine fast and slow Pokémon based on speed
     fast_pokemon, slow_pokemon = (attacker_pokemon, defender_pokemon) if attacker_pokemon.speed > defender_pokemon.speed else (defender_pokemon, attacker_pokemon)
+
+
+    if session['attacker_current_hp'] <= 0 or session['defender_current_hp'] <= 0:
+        return jsonify({
+            'error': 'One of the Pokémon has already fainted.',
+            'attacker_hp': max(0, session['attacker_current_hp']),
+            'defender_hp': max(0, session['defender_current_hp'])
+        })
+
+
+    print(f"Before - Attacker HP: {session['attacker_current_hp']}, Defender HP: {session['defender_current_hp']}")
+
+    print("Session Attacker HP before fight:", session['attacker_current_hp'])
+    print("Session Defender HP before fight:", session['defender_current_hp'])
+
 
     print("Fast Pokémon:", fast_pokemon.name)
     print("Slow Pokémon:", slow_pokemon.name)
-    # Fast Pokémon's damage calculation
-    multiplier = type_multiplier(fast_pokemon.type1, slow_pokemon.type1, slow_pokemon.type2)
-    damage_to_slow = (max(fast_pokemon.atk_base, fast_pokemon.sp_atk) * multiplier) - (max(slow_pokemon.def_base, slow_pokemon.sp_def) * 0.5 + min(slow_pokemon.def_base, slow_pokemon.sp_def) * 0.5)
-    damage_to_slow = max(damage_to_slow, 0)  # No negative damage
-    slow_pokemon.hp_base -= damage_to_slow
-    slow_pokemon.hp_base = max(0, slow_pokemon.hp_base)
 
-    # If the slow Pokémon is alive, it retaliates
-    damage_to_fast = 0
-    if slow_pokemon.hp_base > 0:
-        multiplier = type_multiplier(slow_pokemon.type1, fast_pokemon.type1, fast_pokemon.type2)
-        damage_to_fast = (max(slow_pokemon.atk_base, slow_pokemon.sp_atk) * multiplier) - (max(fast_pokemon.def_base, fast_pokemon.sp_def) * 0.5 + min(fast_pokemon.def_base, fast_pokemon.sp_def) * 0.5)
-        damage_to_fast = max(damage_to_fast, 0)  # No negative damage
-        fast_pokemon.hp_base -= damage_to_fast
-        fast_pokemon.hp_base = max(0, fast_pokemon.hp_base)
+# Fast Pokémon attacks first
+    damage_to_slow, fast_message = calculate_damage(fast_pokemon, slow_pokemon)
+    print(f"Damage by {fast_pokemon.name} to {slow_pokemon.name}:", damage_to_slow)
+    print(fast_message)
+
+    if fast_pokemon == attacker_pokemon:
+        session['defender_current_hp'] -= damage_to_slow
+        print(f"Defender's HP after {attacker_pokemon.name} attacks:", session['defender_current_hp'])
+    else:
+        session['attacker_current_hp'] -= damage_to_slow
+        print(f"Attacker's HP after {defender_pokemon.name} attacks:", session['attacker_current_hp'])
+
+    # Slow Pokémon retaliates if it has HP left
+    if (fast_pokemon == attacker_pokemon and session['defender_current_hp'] > 0) or (fast_pokemon == defender_pokemon and session['attacker_current_hp'] > 0):
+        damage_to_fast, slow_message = calculate_damage(slow_pokemon, fast_pokemon)
+        print(slow_message)
+        
+        if fast_pokemon == attacker_pokemon:
+            session['attacker_current_hp'] -= damage_to_fast
+            print(f"Attacker's HP after {slow_pokemon.name} retaliates:", session['attacker_current_hp'])
+        else:
+            session['defender_current_hp'] -= damage_to_fast
+            print(f"Defender's HP after {fast_pokemon.name} retaliates:", session['defender_current_hp'])
+    else:
+        damage_to_fast = 0
+        slow_message = f"{slow_pokemon.name} didn't retaliate!"
+
+    # Convert HP values to integers (in case they're float)
+    session['attacker_current_hp'] = int(session['attacker_current_hp'])
+    session['defender_current_hp'] = int(session['defender_current_hp'])
+
+    # Ensure HPs do not drop below zero
+    session['attacker_current_hp'] = max(0, session['attacker_current_hp'])
+    session['defender_current_hp'] = max(0, session['defender_current_hp'])
 
     # Determine damage to "attacker" and "defender" based on who the fast Pokémon was
     damage_to_attacker = damage_to_fast if fast_pokemon == defender_pokemon else damage_to_slow
     damage_to_defender = damage_to_slow if fast_pokemon == defender_pokemon else damage_to_fast
-    print("Damage to Slow:", damage_to_slow)
-    print("Damage to Fast:", damage_to_fast)
 
+    print("Session Attacker HP after fight:", session['attacker_current_hp'])
+    print("Session Defender HP after fight:", session['defender_current_hp'])
+
+    
+    print(f"After - Attacker HP: {session['attacker_current_hp']}, Defender HP: {session['defender_current_hp']}")
 
     return jsonify({
-        'attacker_hp': max(0, attacker_pokemon.hp_base),
-        'defender_hp': max(0, defender_pokemon.hp_base),
+        'attacker_hp': max(0, session['attacker_current_hp']),
+        'defender_hp': max(0, session['defender_current_hp']),
         'damage_to_attacker': damage_to_attacker,
-        'damage_to_defender': damage_to_defender
+        'damage_to_defender': damage_to_defender,
+        'fast_pokemon_message': slow_message,
+        'slow_pokemon_message': fast_message
     })
 
 
@@ -231,48 +282,53 @@ def next_pokemon(defender_id):
 @poke.route('/battle/<int:defender_id>/next', methods=['POST'])
 @login_required
 def next_battle(defender_id):
-    # Retrieve all Pokémon for both users
-    attacker_pokemons = current_user.team.pokemons.all() if current_user.team else []
+    # Identify which player's Pokémon was defeated
+    defeated_player = request.form.get('defeated_player')
+    battle_ended = False
     defender = User.query.get(defender_id)
-    defender_pokemons = defender.team.pokemons.all() if defender.team else []
 
-    # Increment the Pokémon index
-    session['attacker_pokemon_index'] += 1
-    session['defender_pokemon_index'] += 1
-
-    # Check if the battle series is over
-    if session['attacker_pokemon_index'] >= len(attacker_pokemons) or session['defender_pokemon_index'] >= len(defender_pokemons):
-        # Determine the overall winner and update user stats
-        if session['attacker_score'] > session['defender_score']:
-            outcome = 'win'
-            current_user.wins += 1
-            defender.losses += 1
-            flash(f"{current_user.username} wins the battle series!", 'success')
-        elif session['attacker_score'] < session['defender_score']:
-            outcome = 'loss'
-            current_user.losses += 1
-            defender.wins += 1
-            flash(f"{defender.username} wins the battle series!", 'success')
+    # Increment the correct Pokémon index and get the next Pokémon
+    if defeated_player == 'attacker':
+        session['attacker_pokemon_index'] += 1
+        print("Attacker Index:", session['attacker_pokemon_index'], "Total Pokémon:", len(current_user.team.pokemons.all()))
+        print("Defender Index:", session['defender_pokemon_index'], "Total Pokémon:", len(defender.team.pokemons.all()))
+        next_pokemon = get_pokemon_for_user(current_user, session['attacker_pokemon_index'])
+        if next_pokemon:
+            session['attacker_current_hp'] = next_pokemon.hp_base
         else:
-            outcome = 'draw'
-            current_user.draws += 1
-            defender.draws += 1
-            flash("The battle series is a draw!", 'info')
-        
-        new_battle = Battle(
-            attacker_id=current_user.id,
-            defender_id=defender_id,
-            result=outcome
-        )
+            session['attacker_current_hp'] = 0
 
-        db.session.add(new_battle)
-        db.session.commit()
-        
+    else:
+        session['defender_pokemon_index'] += 1
+        print("Attacker Index:", session['attacker_pokemon_index'], "Total Pokémon:", len(current_user.team.pokemons.all()))
+        print("Defender Index:", session['defender_pokemon_index'], "Total Pokémon:", len(defender.team.pokemons.all()))
+        next_pokemon = get_pokemon_for_user(defender, session['defender_pokemon_index'])
+        if next_pokemon:
+            session['defender_current_hp'] = next_pokemon.hp_base
+        else:
+            session['defender_current_hp'] = 0
 
-        return redirect(url_for('poke.battle_select'))
+    if defeated_player == 'attacker' and session['attacker_pokemon_index'] >= 6:
+        next_pokemon = None
+    elif defeated_player == 'defender' and session['defender_pokemon_index'] >= 6:
+        next_pokemon = None
 
-    # Redirect to the battle arena for the next match-up
-    return redirect(url_for('poke.battle_arena', defender_id=defender_id))
+    if not next_pokemon:
+        battle_ended = True
+        print(battle_ended)
+        return jsonify({'has_next': False, 'battle_ended': battle_ended})
+    
+    response_data = {
+        'has_next': True,
+        'name': next_pokemon.name,
+        'hp_base': next_pokemon.hp_base,
+        'sprite_url': next_pokemon.sprite_url,
+        'type1': next_pokemon.type1,
+        'type2': next_pokemon.type2,
+        'battle_ended': battle_ended
+    }
+    print(battle_ended)
+    return jsonify(response_data)
 
 
 @poke.route('/reset_battle')
@@ -287,23 +343,30 @@ def reset_battle():
 @login_required
 def battle_summary(defender_id):
 
-    attacker_id = current_user.id
+    attacker = current_user
     defender = User.query.get(defender_id)
 
     attacker_score = session.get('attacker_score', 0)
     defender_score = session.get('defender_score', 0)
 
     if attacker_score > defender_score:
-        current_user.wins += 1
-        defender.losses += 1
+        result = "win"
     elif attacker_score < defender_score:
-        current_user.losses += 1
-        defender.wins += 1
+        result = "lose"
     else:
-        current_user.draws += 1
-        defender.draws += 1
+        result = "draw"
 
+    battle = Battle(attacker_id=current_user.id, defender_id=defender_id, result=result)
+    db.session.add(battle)
     db.session.commit()
+
+    attacker_wins = attacker.get_wins()
+    attacker_losses = attacker.get_losses()
+    attacker_draws = attacker.get_draws()
+
+    defender_wins = defender.get_wins()
+    defender_losses = defender.get_losses()
+    defender_draws = defender.get_draws()
 
     attacker_team = current_user.team.pokemons.all() if current_user.team else []
     defender_team = defender.team.pokemons.all() if defender.team else []
@@ -312,7 +375,17 @@ def battle_summary(defender_id):
 
     reset_battle_progress()
 
-    return render_template("battle_summary.html", summary=summary, attacker_wins=attacker_score, defender_wins=defender_score,
-                            attacker_team=attacker_team, defender_team=defender_team, defender=defender, attacker_id=attacker_id)
+    return render_template("battle_summary.html", 
+                           summary=summary, 
+                           attacker_wins=attacker_wins, 
+                           defender_wins=defender_wins,
+                           attacker_losses=attacker_losses, 
+                           defender_losses=defender_losses, 
+                           attacker_draws=attacker_draws, 
+                           defender_draws=defender_draws,
+                            attacker_team=attacker_team, 
+                            defender_team=defender_team, 
+                            defender=defender, 
+                            attacker_id=attacker.id)
 
 

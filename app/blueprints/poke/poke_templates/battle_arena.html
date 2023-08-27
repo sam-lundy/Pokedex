@@ -73,98 +73,106 @@
             })
             .then(response => response.json())
             .then(data => {
-                // Deduct damage values from each Pokémon's HP
-                // console logs to see damage
-                console.log("Initial Attacker HP:", attackerCurrentHP);
-                console.log("Initial Defender HP:", defenderCurrentHP);
-
-                console.log("Received Damage to Attacker:", data.damage_to_attacker);
-                console.log("Received Damage to Defender:", data.damage_to_defender);
-
-                // Reversed this logic, it is damage dealt BY the attacker or defender
-                attackerCurrentHP -= data.damage_to_defender;
-                defenderCurrentHP -= data.damage_to_attacker;
-
-                console.log("Updated Attacker HP:", attackerCurrentHP);
-                console.log("Updated Defender HP:", defenderCurrentHP);
-            
-                // Update HP bars and text for both Pokémon
+                console.log(data);  // Log the data for debugging purposes
+                console.log("Before Damage: Attacker HP:", attackerCurrentHP, "Defender HP:", defenderCurrentHP);
+        
+                // Directly use the returned HP values
+                attackerCurrentHP = data.attacker_hp;
+                defenderCurrentHP = data.defender_hp;
+    
+                console.log("After Damage: Attacker HP:", attackerCurrentHP, "Defender HP:", defenderCurrentHP);
+    
                 updateHPBar(attackerHPBar, attackerCurrentHP, attackerBaseHP);
                 updateHPBar(defenderHPBar, defenderCurrentHP, defenderBaseHP);
                 attackerHPText.innerText = `HP: ${Math.max(0, attackerCurrentHP)}/${attackerBaseHP}`;
                 defenderHPText.innerText = `HP: ${Math.max(0, defenderCurrentHP)}/${defenderBaseHP}`;
-            
-                // Disable the fight button if either Pokémon has fainted
-                if (attackerCurrentHP <= 0 || defenderCurrentHP <= 0) {
+
+                let battleMessageElement = document.getElementById('battle-message');
+                battleMessageElement.textContent = data.fast_pokemon_message + " " + data.slow_pokemon_message;
+
+                battleMessageElement.style.opacity = 1;
+
+                setTimeout(() => {
+                    battleMessageElement.style.opacity = 0;
+                }, 7000);
+    
+                if ( attackerCurrentHP <= 0 || defenderCurrentHP <= 0) {
                     fightButton.disabled = true;
                     nextBattleButton.disabled = false;
-                } else {
-                    //reenable fightButton if both pokemon still fighting
-                    fightButton.disabled = false;
-                }
+                }                
             })
             .catch(error => {
                 console.error("Error during the fight:", error);
-                fightButton.disabled = false
+                fightButton.disabled = false;
             });
         });
-
+    
         nextBattleButton.addEventListener('click', function() {
             let defeatedPlayer = attackerCurrentHP <= 0 ? 'attacker' : 'defender';
-            // ternary operator. basically if attacker's hp is 0, defeated is attacker, else defender
-            // fetches next pokemon for defeated player to the backend
-            fetch('{{ url_for("poke.next_pokemon", defender_id=defender.id) }}', {
+        
+            console.log("Next Battle Button clicked. Defeated Player:", defeatedPlayer);
+        
+            fetch('{{ url_for("poke.next_battle", defender_id=defender.id) }}', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ defeated_player: defeatedPlayer })
+                body: new URLSearchParams({ defeated_player: defeatedPlayer })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    console.error("Response not OK:", response.statusText);
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                if (!response.headers.get('Content-Type').startsWith('application/json')) {
+                    console.error("Response Content Type:", response.headers.get('Content-Type'));
+                    throw new Error('Received content is not JSON');
+                } 
+                return response.json();
+            })
             .then(data => {
+                console.log("Received Data:", data);  // Log the received data
+        
+                if (data.battle_ended) {
+                    console.log("Battle series ended. Redirecting to battle summary.");
+                    document.getElementById('battle-message').textContent = 'Battle series has ended!';
+                    nextBattleButton.disabled = true;
+                    window.location.href = '{{ url_for("poke.battle_summary", defender_id=defender_id) }}';
+                    return;  // Return early since battle series has ended
+                } 
+        
                 if (data.has_next) {
+                    console.log("There is a next battle.");
                     fightButton.disabled = false;
                     nextBattleButton.disabled = true;
-
+        
                     // Update the UI with the next Pokémon's details
-                    // For example:
                     if (defeatedPlayer == 'attacker') {
                         document.querySelector('.player.attacker img').src = data.sprite_url;
                         document.querySelector('.player.attacker h3').textContent = data.name;
                         updateHPBar(attackerHPBar, data.hp_base, data.hp_base);
                         attackerHPText.innerText = `HP: ${data.hp_base}/${data.hp_base}`;
-                        attackerCurrentHP = data.hp_base;  // Reset the current HP variable
+                        attackerCurrentHP = data.hp_base;
                         attackerBaseHP = data.hp_base;
-                        // ... Update other details ...
                     } else {
                         document.querySelector('.player.defender img').src = data.sprite_url;
                         document.querySelector('.player.defender h3').textContent = data.name;
                         updateHPBar(defenderHPBar, data.hp_base, data.hp_base);
                         defenderHPText.innerText = `HP: ${data.hp_base}/${data.hp_base}`;
-                        defenderCurrentHP = data.hp_base;  // Reset the current HP variable
+                        defenderCurrentHP = data.hp_base;
                         defenderBaseHP = data.hp_base;
-                        // ... Update other details ...
-                    }
+                    }                    
                 } else {
-                    // End of battles
-                    document.getElementById('battle-message').textContent = 'No more Pokémon! Battle ended.';
+                    document.getElementById('battle-message').textContent = 'No more Pokémon! Proceed to the next battle.';
                     nextBattleButton.disabled = true;
-                    window.location.href = '{{ url_for("poke.battle_summary", defender_id=defender_id) }}';
                 }
             })
             .catch(error => {
-                console.error("Error fetching the next Pokémon:", error);
-                nextBattleButton.disabled = false;
+                console.error("Error transitioning to the next battle:", error);
             });
         });
     
         function updateHPBar(hpElement, currentHP, maxHP) {
             let percentage = (currentHP / maxHP) * 100;
-
-            // Update the width of the HP bar to represent the current HP percentage
             hpElement.style.width = percentage + '%';
-        
-            // Adjust color based on HP percentage
+    
             if (percentage > 50) {
                 hpElement.style.backgroundColor = 'green';
             } else if (percentage > 20) {
@@ -174,14 +182,12 @@
             } else {
                 hpElement.style.backgroundColor = 'red';
             }
-            
-        
-            // Update the displayed HP value, ensuring it doesn't show a negative value
+    
             let hpValueElement = hpElement.parentElement.nextElementSibling;
             hpValueElement.textContent = Math.max(0, currentHP) + '/' + maxHP;
         }
     });
-
+    
 </script>
 
 {% endblock %}
