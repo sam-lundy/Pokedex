@@ -310,8 +310,11 @@ def next_battle(defender_id):
 
     if defeated_player == 'attacker' and session['attacker_pokemon_index'] >= 6:
         next_pokemon = None
+        session['defender_score'] += 1
     elif defeated_player == 'defender' and session['defender_pokemon_index'] >= 6:
         next_pokemon = None
+        session['attacker_score'] += 1
+
 
     if not next_pokemon:
         battle_ended = True

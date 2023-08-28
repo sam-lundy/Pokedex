@@ -66,6 +66,9 @@
         let defenderBaseHP = {{ defender_pokemon.hp_base }};
         let attackerCurrentHP = attackerBaseHP;
         let defenderCurrentHP = defenderBaseHP;
+
+        attackerHPBar.style.width = '100%';
+        defenderHPBar.style.width = '100%';
     
         fightButton.addEventListener('click', function() {
             fetch('{{ url_for("poke.battle_fight", defender_id=defender.id) }}', {

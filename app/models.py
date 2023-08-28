@@ -1,7 +1,8 @@
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash
 from flask_login import UserMixin
+from sqlalchemy import or_
 
 
 db = SQLAlchemy()
@@ -46,8 +47,13 @@ class User(db.Model, UserMixin):
                Battle.query.filter_by(defender_id=self.id, result='win').count()
 
     def get_draws(self):
-        return Battle.query.filter((Battle.attacker_id == self.id) | (Battle.defender_id == self.id), 
-                                   Battle.result == 'draw').count()
+        return Battle.query.filter(
+            or_(
+                Battle.attacker_id == self.id,
+                Battle.defender_id == self.id
+            ),
+            Battle.result == 'draw'
+        ).count()
 
 
 class Team(db.Model):
