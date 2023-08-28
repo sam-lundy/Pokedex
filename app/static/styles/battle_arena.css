@@ -108,6 +108,13 @@ p {
     box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.1);
 }
 
+.attacker-hp-text p, .defender-hp-text p {
+    background-color: transparent;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
 .player h2, .player h3 {
     margin-top: 1em;
 }
@@ -145,3 +152,10 @@ p {
     transition: opacity 0.3s ease-in-out;
     opacity: 0;  /* Initially hidden */
 }
+
+.attacker-hp-text, .defender-hp-text {
+    font-size: 1.5em;
+    margin-top: 1em;
+    color: #333;
+}
+
