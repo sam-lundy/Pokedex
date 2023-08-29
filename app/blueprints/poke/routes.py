@@ -262,7 +262,7 @@ def next_pokemon(defender_id):
         session['defender_pokemon_index'] += 1
         defender = User.query.get(defender_id)
         next_pokemon = get_pokemon_for_user(defender, session['defender_pokemon_index'])
-    print(next_pokemon)
+
 
     # If there's a next Pokémon, return its details
     if next_pokemon:
@@ -318,7 +318,6 @@ def next_battle(defender_id):
 
     if not next_pokemon:
         battle_ended = True
-        print(battle_ended)
         return jsonify({'has_next': False, 'battle_ended': battle_ended})
     
     response_data = {
@@ -354,10 +353,18 @@ def battle_summary(defender_id):
 
     if attacker_score > defender_score:
         result = "win"
+        attacker.wins += 1
+        defender.losses += 1
     elif attacker_score < defender_score:
         result = "lose"
+        attacker.losses += 1
+        defender.wins += 1
     else:
         result = "draw"
+        attacker.draws += 1
+        defender.draws += 1
+
+    db.session.commit()
 
     battle = Battle(attacker_id=current_user.id, defender_id=defender_id, result=result)
     db.session.add(battle)
@@ -365,11 +372,10 @@ def battle_summary(defender_id):
 
     attacker_wins = attacker.get_wins()
     attacker_losses = attacker.get_losses()
-    attacker_draws = attacker.get_draws()
 
     defender_wins = defender.get_wins()
     defender_losses = defender.get_losses()
-    defender_draws = defender.get_draws()
+
 
     attacker_team = current_user.team.pokemons.all() if current_user.team else []
     defender_team = defender.team.pokemons.all() if defender.team else []
@@ -383,9 +389,7 @@ def battle_summary(defender_id):
                            attacker_wins=attacker_wins, 
                            defender_wins=defender_wins,
                            attacker_losses=attacker_losses, 
-                           defender_losses=defender_losses, 
-                           attacker_draws=attacker_draws, 
-                           defender_draws=defender_draws,
+                           defender_losses=defender_losses,
                             attacker_team=attacker_team, 
                             defender_team=defender_team, 
                             defender=defender, 

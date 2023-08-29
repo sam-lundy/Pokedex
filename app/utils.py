@@ -147,11 +147,13 @@ def get_pokemon_for_user(user, index=0):
             print("No Pokémon found for Index:", index)
     return None
 
+
 def get_total_pokemon_for_user(user):
     """Return total number of pokemon for user"""
     if user and user.team:
         return len(user.team.pokemons.all())
     return 0
+
 
 def reset_battle_progress():
     session.pop('attacker_pokemon_index', None)
@@ -173,7 +175,6 @@ def type_multiplier(attacking_type, defending_type1, defending_type2=None):
     
     return multiplier1
 
-import random
 
 def calculate_damage(attacker, defender):
     multiplier = type_multiplier(attacker.type1, defender.type1, defender.type2)
@@ -188,7 +189,7 @@ def calculate_damage(attacker, defender):
 
     # Critical hit chance
     if random.uniform(0, 1) < 0.05:
-        damage *= 1.5
+        damage *= 2
         return round(damage), "Critial hit!"
 
     # Miss chance
