@@ -88,13 +88,13 @@ def profile():
     pic_form = UpdateProfilePictureForm()
     bio_form = UpdateProfileForm()
 
-    wins = current_user.get_wins()
-    losses = current_user.get_losses()
-    draws = current_user.get_draws()
-    
     if not current_user.is_authenticated:
         flash("Sign in to view your profile.", "warning")
         return redirect(url_for('auth.login'))
+
+    wins = current_user.get_wins()
+    losses = current_user.get_losses()
+    draws = current_user.get_draws()
     
     print(current_user.bio)
 
