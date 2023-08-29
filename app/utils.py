@@ -148,13 +148,6 @@ def get_pokemon_for_user(user, index=0):
     return None
 
 
-def get_total_pokemon_for_user(user):
-    """Return total number of pokemon for user"""
-    if user and user.team:
-        return len(user.team.pokemons.all())
-    return 0
-
-
 def reset_battle_progress():
     session.pop('attacker_pokemon_index', None)
     session.pop('defender_pokemon_index', None)

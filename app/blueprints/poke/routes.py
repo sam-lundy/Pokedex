@@ -132,8 +132,8 @@ def battle_arena(defender_id):
         flash('Invalid defender selected!', 'error')
         return redirect(url_for('poke.battle_select'))
 
-    attacker_pokemon = get_pokemon_for_user(attacker, session.get('attacker_pokemon_index'))
-    defender_pokemon = get_pokemon_for_user(defender, session.get('defender_pokemon_index'))
+    attacker_pokemon = get_pokemon_for_user(attacker, session.get('attacker_pokemon_index', 0))
+    defender_pokemon = get_pokemon_for_user(defender, session.get('defender_pokemon_index', 0))
 
     if not attacker_pokemon or not defender_pokemon:
         flash('Either you or the defender does not have a Pokémon!', 'error')
