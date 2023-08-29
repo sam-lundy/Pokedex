@@ -181,7 +181,11 @@ def calculate_damage(attacker, defender):
     attacking_stat = max(attacker.atk_base, attacker.sp_atk) * multiplier
     defending_stat = (max(defender.def_base, defender.sp_def) * 0.5 + min(defender.def_base, defender.sp_def) * 0.5)
 
-    damage = max(attacking_stat - defending_stat, 1) #min damage is 1
+
+    if attacking_stat < defending_stat:
+        damage = random.randrange(5, 20)
+    else:
+        damage = max(attacking_stat - defending_stat, 1) #min damage is 1
 
     # Random multiplier (for instance, a value between 0.85 and 1.15)
     random_multiplier = random.uniform(0.9, 1.10)
@@ -198,7 +202,6 @@ def calculate_damage(attacker, defender):
         return damage, f"{attacker.name} missed!"
 
     return round(damage), f"{attacker.name} dealt {round(damage)} damage to {defender.name}!"
-
 
 
 

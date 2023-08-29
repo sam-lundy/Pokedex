@@ -115,7 +115,8 @@ def discover():
 @login_required
 def battle_select():
     reset_battle_progress()
-    users = User.query.filter(User.id != current_user.id).all()
+    #filters out users with no pokemon on their team
+    users = db.session.query(User).join(Team).filter(Team.pokemons.any(), User.id != current_user.id).all()
     return render_template('battle_select.html', users=users)
 
 
@@ -125,27 +126,28 @@ def battle_arena(defender_id):
     attacker = current_user
     defender = User.query.get(defender_id)
 
+    if not defender:
+        flash('Invalid defender selected!', 'error')
+        return redirect(url_for('poke.battle_select'))
+
+    attacker_pokemon = get_pokemon_for_user(attacker, session.get('attacker_pokemon_index'))
+    defender_pokemon = get_pokemon_for_user(defender, session.get('defender_pokemon_index'))
+
+    if not attacker_pokemon or not defender_pokemon:
+        flash('Either you or the defender does not have a Pokémon!', 'error')
+        return redirect(url_for('poke.battle_select'))
+    
 
     session.setdefault('attacker_pokemon_index', 0)
     session.setdefault('defender_pokemon_index', 0)
     session.setdefault('attacker_score', 0)
     session.setdefault('defender_score', 0)
 
-    attacker_pokemon = get_pokemon_for_user(attacker, session.get('attacker_pokemon_index'))
-    defender_pokemon = get_pokemon_for_user(defender, session.get('defender_pokemon_index'))
-
-
     session['attacker_current_hp'] = attacker_pokemon.hp_base
     session['defender_current_hp'] = defender_pokemon.hp_base
 
-
     print("Initializing Attacker HP:", session['attacker_current_hp'])
     print("Initializing Defender HP:", session['defender_current_hp'])
-
-    if not defender:
-        flash('Invalid defender selected!', 'error')
-        return redirect(url_for('poke.battle_select'))
-
 
     print("Attacker Pokémon Index:", session['attacker_pokemon_index'])
     print("Defender Pokémon Index:", session['defender_pokemon_index'])
@@ -154,10 +156,6 @@ def battle_arena(defender_id):
     print("Defender's Pokémon:", defender_pokemon.name)
 
 
-    if not attacker_pokemon or not defender_pokemon:
-        flash('Either you or the defender does not have a Pokémon!', 'error')
-        return redirect(url_for('poke.battle_select'))
-    
     session['defender_id'] = defender_id
 
     return render_template("battle_arena.html", attacker=attacker, defender=defender, 
