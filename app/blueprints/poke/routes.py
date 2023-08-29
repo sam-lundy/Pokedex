@@ -115,9 +115,11 @@ def discover():
 @login_required
 def battle_select():
     reset_battle_progress()
-    #filters out users with no pokemon on their team
-    users = db.session.query(User).join(Team).filter(Team.pokemons.any(), User.id != current_user.id).all()
-    return render_template('battle_select.html', users=users)
+    
+    all_users = User.query.filter(User.id != current_user.id).all()
+    users_with_pokemon = [user for user in all_users if user.team and user.team.pokemons.all()]
+
+    return render_template('battle_select.html', all_users=all_users, users_with_pokemon=users_with_pokemon)
 
 
 @poke.route('/battle/<int:defender_id>', methods=['GET', 'POST'])
