@@ -177,6 +177,7 @@ def calculate_damage(attacker, defender):
 
     if attacking_stat < defending_stat:
         damage = random.randrange(5, 20)
+        print(damage)
     else:
         damage = max(attacking_stat - defending_stat, 1) #min damage is 1
 
